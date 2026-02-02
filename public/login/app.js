@@ -81,7 +81,7 @@ async function handleLogin() {
 
     try {
         await login(username, password);
-        window.location.href = "/public/home";
+        window.location.href = "/home/index.html";
     } catch (error) {
         feedbackElement.textContent = "Login error occured.";
     }
@@ -103,7 +103,7 @@ async function handleRegister() {
     try {
         await register(username, password);
         await login(username, password)
-        window.location.href = "/public/home";
+        window.location.href = "/home/index.html";
     } catch (err) {
         feedbackElement.textContent = "Registration error";
         return;
