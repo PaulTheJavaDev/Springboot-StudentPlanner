@@ -34,7 +34,7 @@ async function apiGet() {
 
 async function deleteTimeStampAPI(dayOfWeek, timestampID) {
     
-    const errorMessage = `HTTP error! status: ${result.status}`;
+    const errorMessage = `Something went wrong.`;
     let result;
 
     try {
@@ -59,7 +59,7 @@ async function deleteTimeStampAPI(dayOfWeek, timestampID) {
 // Data Creation
 async function createTimeStampAPI(dayOfWeek, type, text) {
 
-    const errorMessage = `Something went wrong!`;
+    const errorMessage = `Something went wrong.`;
     let result;
 
     try {
@@ -103,7 +103,7 @@ async function apiUpdateTimeStamp(
     });
 
     if (!result.ok) {
-        showFeedback(`HTTP error! status: ${result.status}`);
+        showFeedback("Something went wrong.");
         return;
     }
 
@@ -122,7 +122,7 @@ async function getSubjects() {
     });
 
     if (!result.ok) {
-        showFeedback(`HTTP error! status: ${result.status}`);
+        showFeedback("Something went wrong.");
         return;
     }
 
