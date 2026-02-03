@@ -1,6 +1,5 @@
-export const HOST = "http://localhost:8080";  // ← Von 8081 zu 8080!
+export const HOST = "http://localhost:8080";
 
-// Rest bleibt gleich
 export const ASSIGNMENTS_URL = HOST + "/assignments/me";
 export const EXAMS_URL = HOST + "/exams/me";
 
