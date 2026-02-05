@@ -1,121 +1,151 @@
-import { getSessionID } from "/modules/Security.js";
-import { LOGIN_URL, REGISTER_URL } from "/modules/Config.js";
+import { getSessionID } from "../modules/Security.js";
+import { LOGIN_URL, REGISTER_URL } from "../modules/Config.js";
 
 let sessionID = getSessionID();
 
-// User is logged in
 if (sessionID !== null) {
     window.location.href = "../home/index.html";
 }
 
-async function login(username, password) {
-    
-    try {
-        const result = await fetch(LOGIN_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-        });
-    
-        if (!result.ok) {
-            feedbackElement.textContent = "Login failed: " + result.statusText;
-            return;
-        }
-    
-        const data = await result.json();
-        sessionID = data.sessionID;
-        sessionStorage.setItem("SessionID", data.sessionID);
+const elements = {
+    usernameElement: document.getElementById("authUsername"),
+    passwordElement: document.getElementById("authPassword"),
+    feedbackElement: document.getElementById("authFeedback"),
+    loginButton: document.getElementById("loginBtn"),
+    registerButton: document.getElementById("registerBtn")
+};
 
-    } catch (error) {
-        feedbackElement.textContent = "Something went wrong.";
+const errorMessages = {
+    invalidLoginCredentials: "Invalid Username or Password.",
+    invalidRegisterCredentials: "Username already exists.",
+    epmtyFields: "Please fill the input-fields.",
+    defaultError: "Something went wrong"
+}
+
+async function login(
+    username, 
+    password
+) {
+
+    const result = await fetch(LOGIN_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify( { username, password } )
+    });
+
+    if (!result.ok) {
+        showResponse(errorMessages.invalidLoginCredentials);
+        return false;
     }
-    return;
+
+    const data = await result.json();
+    sessionID = data.sessionID;
+    sessionStorage.setItem("SessionID", data.sessionID);
+
+    return true;
 }
 
 async function register(username, password) {
 
+    let result;
+
     try {
-        const result = await fetch(REGISTER_URL, {
+
+        result = await fetch(REGISTER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify( { username, password } )
         });
 
-        console.log("Response Status:", result.status, result.statusText);
-
-        const data = await result.text().catch(() => {
-            feedbackElement.textContent = "Response could not be parsed.";
-            return;
-        });
-
-        console.log("Data received:", data);
-
-        if (!result.ok) {
-            feedbackElement.textContent = "Registration failed: ${data}";
-            return;
-        }
-
-        return { message: data };
-    } catch (error) {
-        feedbackElement.textContent = "Something went wrong.";
+    } catch {
+        showResponse(errorMessages.defaultError);
+        return false;
     }
+    
+    if (!result.ok) {
+        showResponse(errorMessages.invalidRegisterCredentials);
+        return false;
+    }
+
+    return true;
 }
 
-async function handleLogin() {
-    const usernameElement = document.getElementById("authUsername");
-    const passwordElement = document.getElementById("authPassword");
-    const feedbackElement = document.getElementById("authFeedback");
+/**
+ * Makes a Request to the backend and decide if the user can login or not.
+ */
+async function handleLoginPress() {
 
-    if (!usernameElement || !passwordElement || !feedbackElement) {
-        console.error("Required elements not found!");
-        return;
-    }
-
-    const username = usernameElement.value.trim();
-    const password = passwordElement.value.trim();
+    const username = elements.usernameElement.value.trim();
+    const password = elements.passwordElement.value.trim();
 
     if (!username || !password) {
-        feedbackElement.textContent = "Please enter both username and password";
+        showResponse(errorMessages.epmtyFields);
         return;
     }
 
-    try {
-        await login(username, password);
+    const success = await login(username, password);
+    if (success) {
         window.location.href = "/home/index.html";
-    } catch (error) {
-        feedbackElement.textContent = "Login error occured.";
     }
+
 }
 
-async function handleRegister() {
-    const usernameElement = document.getElementById("authUsername");
-    const passwordElement = document.getElementById("authPassword");
-    const feedbackElement = document.getElementById("authFeedback");
-
-    const username = usernameElement.value.trim();
-    const password = passwordElement.value.trim();
+/**
+ * Makes a Request to the backend and decide if the user can register or not.
+ */
+async function handleRegisterPress() {
+    
+    const username = elements.usernameElement.value.trim();
+    const password = elements.passwordElement.value.trim();
 
     if (!username || !password) {
-        feedbackElement.textContent = "Please enter both username and password.";
+        showResponse(errorMessages.epmtyFields);
         return;
     }
 
-    try {
-        await register(username, password);
-        await login(username, password)
-        window.location.href = "/home/index.html";
-    } catch (err) {
-        feedbackElement.textContent = "Registration error";
+    const registered = await register(username, password);
+    if (!registered) {
         return;
+    }
+
+    const loggedIn = await login(username, password);
+    if (loggedIn) {
+        window.location.href = "/home/index.html";
     }
 }
 
+/**
+ * Connects all buttons with their corresponding functions
+ */
 function bindUI() {
-    const loginBtn = document.getElementById("loginBtn");
-    const registerBtn = document.getElementById("registerBtn");
 
-    loginBtn.addEventListener("click", () => handleLogin());
-    registerBtn.addEventListener("click", () => handleRegister());
+    if (!checkElementsAndBind()) return;
+    
+    const loginButton = elements.loginButton;
+    const registerButton = elements.registerButton;
+
+    loginButton.addEventListener("click", handleLoginPress);
+    registerButton.addEventListener("click", handleRegisterPress);
+}
+
+/**
+ * Displays a response to the user.
+ * @param {*} response A string that will be displayed in the feedback element.
+ */
+function showResponse(response) {
+    const time = 1.5;
+    setTimeout(() => {
+        elements.feedbackElement.textContent = response;
+    }, time);
+    elements.feedbackElement.textContent = "";
+}
+
+function checkElementsAndBind() {
+    if (!Object.values(elements).every(element => element !== null)) {
+        console.error("Some required elements are missing!");
+        return false;
+    }
+    return true;
 }
 
 bindUI();

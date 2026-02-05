@@ -4,8 +4,6 @@ import { checkTextForSymbols } from "/modules/TextSecurity.js";
 
 validateSessionAuth();
 
-const EXAMS_API_URL = EXAMS_URL;
-
 // DOM Elements
 const examsContainer = document.getElementById("examsContainer");
 const subjectSelect = document.getElementById("subjectSelect");
@@ -36,26 +34,26 @@ async function fetchAPI(url, options = {}) {
 }
 
 async function getExams() {
-    const data = await fetchAPI(EXAMS_API_URL);
+    const data = await fetchAPI(EXAMS_URL);
     return data || [];
 }
 
 async function createExam(examData) {
-    return await fetchAPI(EXAMS_API_URL, {
+    return await fetchAPI(EXAMS_URL, {
         method: "POST",
         body: JSON.stringify(examData)
     });
 }
 
 async function updateExam(examID, examData) {
-    return await fetchAPI(`${EXAMS_API_URL}/${examID}`, {
+    return await fetchAPI(`${EXAMS_URL}/${examID}`, {
         method: "PUT",
         body: JSON.stringify(examData)
     });
 }
 
 async function deleteExam(examID) {
-    return await fetchAPI(`${EXAMS_API_URL}/${examID}`, {
+    return await fetchAPI(`${EXAMS_URL}/${examID}`, {
         method: "DELETE"
     });
 }

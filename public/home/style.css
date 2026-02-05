@@ -220,9 +220,11 @@
 }
 
 .contextMenu {
+    position: absolute;
+    display: none;
+
     display: flex;
     flex-direction: column;
-    position: absolute;
     background: color(0, 0, 0, 0);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);

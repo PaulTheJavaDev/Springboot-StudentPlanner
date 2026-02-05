@@ -1,160 +1,150 @@
 import { validateSessionAuth, getSessionID } from "/modules/Security.js";
-import { HOME_URL } from "/modules/Config.js";
-import { setFeedbackLabel, showFeedback } from "/modules/Feedback.js";
+import { HOME_URL, HOST } from "/modules/Config.js";
 
-validateSessionAuth();
+const elements = {
+    feedbackElement: document.getElementById("responseLabel")
+};
 
-setFeedbackLabel(document.getElementById("responseLabel"));
+const errorMessages = {
+    emptyFields: "Please fill the input fields.",
+    defaultError: "Something went wrong"
+};
 
-// GET request to fetch schedule data
-async function apiGet() {
+function showResponse(message, duration = 1500) {
+    elements.feedbackElement.textContent = message;
+    setTimeout(() => {
+        elements.feedbackElement.textContent = "";
+    }, duration);
+}
 
-    let result;
-    
+// Generic GET request - default is the schedule/me URL
+async function apiGet(url = HOME_URL) {
     try {
-        result = await fetch(HOME_URL, {
-        method: 'GET',
-        headers: {
-            'SessionID': getSessionID()
-        }
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: { 'SessionID': getSessionID() }
         });
 
-        if (!result.ok) {
-            showFeedback("Could't get Scheduler: " + await result.text());
+        if (!response.ok) {
+            showResponse(`Couldn't fetch data: ${await response.text()}`);
             return;
         }
-        
+
+        return await response.json();
     } catch (error) {
-        showFeedback("Error during the fetch of TimeStamps: " + error);
+        showResponse(`Fetch error: ${error}`);
         return;
     }
-    
-    return result.json();
 }
 
-async function deleteTimeStampAPI(dayOfWeek, timestampID) {
-    
-    const errorMessage = `Something went wrong.`;
-    let result;
+// Generic DELETE request
+async function apiDelete(url) {
 
     try {
-        result = await fetch(`${HOME_URL}/${dayOfWeek}/${timestampID}`, {
-        method: 'DELETE',
-        headers: {
-            'SessionID': getSessionID()
+        const response = await fetch(url, { 
+            method: 'DELETE', 
+            headers: { 
+                'SessionID': getSessionID() 
+            } 
+        });
+
+        if (!response.ok) {
+            showResponse(errorMessages.defaultError);
         }
-    });
-    } catch (error) {
-        showFeedback(errorMessage);
-        return;
-    }
 
-    if (!result.ok) {
-        showFeedback(errorMessage);
-        return;
+        return response.ok;
+
+    } catch {
+        showResponse(errorMessages.defaultError);
+        return false;
     }
 
 }
 
-// Data Creation
-async function createTimeStampAPI(dayOfWeek, type, text) {
-
-    const errorMessage = `Something went wrong.`;
-    let result;
-
-    try {
-        result = await fetch(`${HOME_URL}/${dayOfWeek}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'SessionID': getSessionID()
-        },
-        body: JSON.stringify({type, text})
-    });
-    } catch(error) {
-        showFeedback(errorMessage);
-        return;
-    }
-
-    if (!result.ok) {
-        showFeedback(errorMessage);
-        return;
-    }
-
-    return await result.json();
-}
-
-async function apiUpdateTimeStamp(
-    dayOfWeek, 
-    timestampID, 
-    type, 
-    text
+// Generic POST request
+async function apiPost(
+    url, 
+    data
 ) {
 
-    const fetchURL = `${HOME_URL}/${dayOfWeek}/${timestampID}`;
+    try {
 
-    const result = await fetch(fetchURL, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'SessionID': getSessionID()
-        },
-        body: JSON.stringify({ type, text })
-    });
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'SessionID': getSessionID()
+            },
+            body: JSON.stringify(data)
+        });
 
-    if (!result.ok) {
-        showFeedback("Something went wrong.");
-        return;
+        if (!response.ok) {
+            showResponse(errorMessages.defaultError);
+            return;
+        }
+
+        return await response.json();
+
+    } catch {
+        showResponse(errorMessages.defaultError);
     }
-
-    return await result.json();
 }
 
-async function getSubjects() {
+// Generic PUT request
+async function apiPut(
+    url, 
+    data
+) {
 
-    const fetchAPI = `${API_URL}/subjects`;
+    try {
 
-    const result = await fetch(fetchAPI, {
-        method: 'GET',
-        headers: {
-            'SessionID': getSessionID()
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'SessionID': getSessionID()
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            showResponse(errorMessages.defaultError);
+            return;
         }
-    });
 
-    if (!result.ok) {
-        showFeedback("Something went wrong.");
+        return await response.json();
+
+    } catch {
+        showResponse(errorMessages.defaultError);
         return;
     }
+}
 
-    return await result.json();
+// Fetch subjects
+async function getSubjects() {
+    return await apiGet(`${HOST}/subjects`);
 }
 
 // Context menu creation
-function createMenu(
-    options, 
-    button
-) {
+function createMenu(options, button) {
 
     const menu = document.createElement('div');
     menu.className = 'contextMenu';
 
-    options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.textContent = opt.label;
-        btn.onclick = () => {
-            opt.action();
-            menu.style.display = 'none';
+    options.forEach(option => {
+
+        const button = document.createElement('button');
+        button.textContent = option.label;
+
+        button.onclick = () => {
+            option.action(); menu.style.display = 'none';
         };
-        menu.appendChild(btn);
+
+        menu.appendChild(button);
     });
 
     document.body.appendChild(menu);
-    menu.style.position = 'absolute';
-    menu.style.top = '0';
-    menu.style.left = '100%';
-    menu.style.display = 'none';
 
-    // Show menu
     button.onclick = () => {
         const rect = button.getBoundingClientRect();
         menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
@@ -162,24 +152,22 @@ function createMenu(
         menu.style.display = 'block';
 
         const handleClickOutside = (event) => {
+
             if (!menu.contains(event.target) && event.target !== button) {
                 menu.style.display = 'none';
                 document.removeEventListener('click', handleClickOutside);
             }
-        };
 
+        };
         document.addEventListener('click', handleClickOutside);
     };
 
     return menu;
 }
 
-// Create Timestamp Element | Data -> Element
-function createTimeStampElement(
-    dayOfWeek, 
-    data
-) {
-    
+// Create timestamp element
+function createTimeStampElement(dayOfWeek, data) {
+
     const div = document.createElement('div');
     div.className = data.type;
     div.dataset.type = data.type;
@@ -193,22 +181,20 @@ function createTimeStampElement(
     const editButton = document.createElement('button');
     editButton.className = 'editButton';
     editButton.textContent = '⋮';
-
     div.appendChild(editButton);
 
     const options = [];
-
     if (data.type === 'lesson') {
         options.push({
             label: 'Edit',
             action: async () => {
-                const lessonOptions = await getSubjects();
-                const select = document.createElement('select');
+                const subjects = await getSubjects();
+                if (!subjects) return;
 
-                lessonOptions.forEach(name => {
+                const select = document.createElement('select');
+                subjects.forEach(name => {
                     const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = name;
+                    option.value = option.textContent = name;
                     if (name === span.textContent) option.selected = true;
                     select.appendChild(option);
                 });
@@ -216,16 +202,15 @@ function createTimeStampElement(
                 span.replaceWith(select);
                 select.focus();
 
-                const restoreSpan = async () => {
+                const save = async () => {
                     span.textContent = select.value;
-                    // Backend erwartet beide: type und text
-                    await apiUpdateTimeStamp(dayOfWeek, data.id, data.type, select.value);
+                    await apiPut(`${HOME_URL}/${dayOfWeek}/${data.id}`, { type: data.type, text: select.value });
                     data.text = select.value;
                     select.replaceWith(span);
                 };
 
-                select.addEventListener('change', restoreSpan);
-                select.addEventListener('blur', restoreSpan);
+                select.addEventListener('change', save);
+                select.addEventListener('blur', save);
             }
         });
     }
@@ -237,74 +222,56 @@ function createTimeStampElement(
     deleteBtn.onclick = async () => {
         div.remove();
         menu.remove();
-        await deleteTimeStampAPI(dayOfWeek, data.id);
+        await apiDelete(`${HOME_URL}/${dayOfWeek}/${data.id}`);
     };
     menu.appendChild(deleteBtn);
 
     return div;
 }
 
-
-// Load Schedule
+// Load full schedule
 async function loadSchedule() {
     const days = await apiGet();
+    if (!days) return;
 
     days.forEach(day => {
         const container = document.getElementById(day.dayOfWeek);
         if (!container) return;
 
-        // Clear old elements
         container.querySelectorAll('.lesson, .break').forEach(e => e.remove());
-
-        // Sort timestamps by ID before rendering
-        const sortedTimestamps = [...day.timeStamps].sort((a, b) => a.id - b.id);
-        
-        sortedTimestamps.forEach(timestamp => {
-            container.appendChild(createTimeStampElement(day.dayOfWeek, timestamp));
-        });
+        day.timeStamps.sort((a, b) => a.id - b.id)
+                      .forEach(ts => container.appendChild(createTimeStampElement(day.dayOfWeek, ts)));
     });
 }
 
+// Add new timestamp
 async function addItem(dayOfWeek, type) {
     const container = document.getElementById(dayOfWeek);
-    const timestamp = await createTimeStampAPI(dayOfWeek, type, type === 'lesson' ? 'Lesson' : 'Break');
+    if (!container) return;
+    const timestamp = await apiPost(`${HOME_URL}/${dayOfWeek}`, { type, text: type === 'lesson' ? 'Lesson' : 'Break' });
+    if (!timestamp) return;
     container.appendChild(createTimeStampElement(dayOfWeek, timestamp));
 }
 
-// Bindings //
-document.querySelectorAll('.addLesson').forEach(button => {
-    button.onclick = e => addItem(e.target.closest('.hoursContainer').id, 'lesson');
-});
-
-document.querySelectorAll('.addBreak').forEach(button => {
-    button.onclick = e => addItem(e.target.closest('.hoursContainer').id, 'break');
-});
-
-document.querySelectorAll('.assignmentsButton').forEach(button => {
-    button.onclick = () => {
-        window.location.href = '/assignments/index.html';
-    };
-});
-
-document.querySelectorAll('.examsButton').forEach(button => {
-    button.onclick = () => {
-        window.location.href = '/exams/index.html';
-    };
-});
+// Event bindings
+document.querySelectorAll('.addLesson').forEach(button => button.onclick = element => addItem(element.target.closest('.hoursContainer').id, 'lesson'));
+document.querySelectorAll('.addBreak').forEach(button => button.onclick = element => addItem(element.target.closest('.hoursContainer').id, 'break'));
+document.querySelectorAll('.assignmentsButton').forEach(button => button.onclick = () => window.location.href = '/assignments/index.html');
+document.querySelectorAll('.examsButton').forEach(button => button.onclick = () => window.location.href = '/exams/index.html');
 
 document.getElementById('logoutButton').onclick = () => {
     sessionStorage.removeItem('SessionID');
     window.location.href = '/login/index.html';
-}
+};
 
+// Initialize
 window.addEventListener('DOMContentLoaded', () => {
+    validateSessionAuth();
 
-    const sessionID = sessionStorage.getItem('SessionID');
-
-    // Redirect to login if no SessionID
-    if (!sessionID) {
+    if (!sessionStorage.getItem('SessionID')) {
         window.location.href = '/login/index.html';
         return;
     }
+
     loadSchedule();
 });
