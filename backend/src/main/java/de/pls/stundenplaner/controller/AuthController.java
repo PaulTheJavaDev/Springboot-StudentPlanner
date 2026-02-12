@@ -13,6 +13,7 @@ import de.pls.stundenplaner.dto.request.auth.LoginRequest;
 import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
 import de.pls.stundenplaner.dto.response.auth.LoginResponse;
 import de.pls.stundenplaner.service.AuthService;
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
 import de.pls.stundenplaner.util.exceptions.UserAlreadyExistsException;
 import jakarta.validation.Valid;
@@ -50,7 +51,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<String> register(
             @RequestBody @Valid RegisterRequest registerRequest
-    ) throws UserAlreadyExistsException {
+    ) throws UserAlreadyExistsException, EmptyUsernameException {
 
         authService.registerUser(registerRequest);
         return ResponseEntity.ok().build();

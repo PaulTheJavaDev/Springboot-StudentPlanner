@@ -24,6 +24,7 @@ import de.pls.stundenplaner.model.Subject;
 import de.pls.stundenplaner.model.User;
 import de.pls.stundenplaner.repository.AssignmentRepository;
 import de.pls.stundenplaner.util.UserUtil;
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 
 @SuppressWarnings("unused")
@@ -38,17 +39,22 @@ public class AssignmentsServiceTest {
     private AssignmentService service;
 
     @BeforeEach
-    void setup() {
+    void setup() throws EmptyUsernameException {
         MockitoAnnotations.openMocks(this);
         createTestUser();
     }
 
-    void createTestUser() {
+    void createTestUser() throws EmptyUsernameException {
 
-        user = new User(
-            "testuser",
-            "hashedpassword"
-        );
+        try {
+            user = new User(
+                "testuser", 
+                "hashedpassword"
+            );
+        } catch (EmptyUsernameException e) {
+            throw new RuntimeException(e);
+        }
+        
         user.setUserUUID(UUID.randomUUID());
         user.setSessionID(UUID.randomUUID());
 

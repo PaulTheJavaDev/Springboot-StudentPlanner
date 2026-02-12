@@ -1,18 +1,20 @@
 package de.pls.stundenplaner.service;
 
-import de.pls.stundenplaner.dto.request.auth.LoginRequest;
-import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
-import de.pls.stundenplaner.dto.response.auth.LoginResponse;
-import de.pls.stundenplaner.repository.UserRepository;
-import de.pls.stundenplaner.model.User;
-import de.pls.stundenplaner.util.PasswordHasher;
-import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
-import de.pls.stundenplaner.util.exceptions.UserAlreadyExistsException;
-import lombok.NonNull;
+import java.util.UUID;
+
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
+import de.pls.stundenplaner.dto.request.auth.LoginRequest;
+import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
+import de.pls.stundenplaner.dto.response.auth.LoginResponse;
+import de.pls.stundenplaner.model.User;
+import de.pls.stundenplaner.repository.UserRepository;
+import de.pls.stundenplaner.util.PasswordHasher;
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
+import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
+import de.pls.stundenplaner.util.exceptions.UserAlreadyExistsException;
+import lombok.NonNull;
 
 /**
  * Handles the Authentication process.
@@ -61,7 +63,7 @@ public class AuthService {
      */
     public void registerUser(
             final @NotNull @NonNull RegisterRequest registerRequest
-    ) throws UserAlreadyExistsException {
+    ) throws UserAlreadyExistsException, EmptyUsernameException {
 
         final String username = registerRequest.username();
 
@@ -71,10 +73,15 @@ public class AuthService {
 
         final String hashedPassword = PasswordHasher.sha256(registerRequest.password());
 
-        final User user = new User(
+        User user;
+        try {
+            user = new User(
                 username,
                 hashedPassword
-        );
+            );
+        } catch (EmptyUsernameException e) {
+            return;
+        }
 
         userRepository.save(user);
     }

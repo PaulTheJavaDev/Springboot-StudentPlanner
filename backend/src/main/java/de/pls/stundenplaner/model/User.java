@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import io.micrometer.common.lang.NonNull;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -48,10 +49,16 @@ public final class User {
     public User(
             @NonNull final String username,
             @NonNull final String password_hash
-    ) {
+    ) throws EmptyUsernameException {
         setUserUUID(UUID.randomUUID());
-        this.username = username;
+        setUsername(username);
         this.password_hash = password_hash;
     }
 
+    void setUsername(@NonNull final String username) throws EmptyUsernameException {
+        if (username.isEmpty()) {
+            throw new EmptyUsernameException();
+        }
+        this.username = username;
+    }
 }

@@ -24,6 +24,7 @@ import de.pls.stundenplaner.model.Subject;
 import de.pls.stundenplaner.model.User;
 import de.pls.stundenplaner.repository.ExamRepository;
 import de.pls.stundenplaner.util.UserUtil;
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 
 public class ExamsServiceTest {
@@ -38,13 +39,14 @@ public class ExamsServiceTest {
     private ExamService service;
 
     @BeforeEach
-    void setup() {
+    @SuppressWarnings("unused")
+    void setup() throws EmptyUsernameException {
         MockitoAnnotations.openMocks(this);
         createTestUser();
     }
 
     // Creates a test user
-    void createTestUser() {
+    void createTestUser() throws EmptyUsernameException {
 
         user = new User(
             "testuser", 
