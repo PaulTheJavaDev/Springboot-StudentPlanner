@@ -8,7 +8,7 @@ COPY pom.xml .
 RUN mkdir -p src/main/java
 
 # Kopiere alle Java-Packages
-COPY de ./src/main/java/de
+COPY src ./src
 
 # Build
 RUN mvn clean package -DskipTests

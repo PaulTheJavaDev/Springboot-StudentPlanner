@@ -1,21 +1,24 @@
 package de.pls.stundenplaner.service;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Service;
+
 import de.pls.stundenplaner.dto.request.scheduler.CreateTimeStampRequest;
 import de.pls.stundenplaner.dto.request.scheduler.UpdateTimeStampRequest;
-import de.pls.stundenplaner.model.*;
+import de.pls.stundenplaner.model.DayOfWeek;
+import de.pls.stundenplaner.model.ScheduleDay;
+import de.pls.stundenplaner.model.TimeStamp;
+import de.pls.stundenplaner.model.User;
 import de.pls.stundenplaner.repository.SchedulerRepository;
 import de.pls.stundenplaner.repository.TimeStampRepository;
+import static de.pls.stundenplaner.util.UserUtil.checkUserExistenceBySessionID;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.UUID;
-
-import static de.pls.stundenplaner.util.UserUtil.checkUserExistenceBySessionID;
 
 /**
  * Business logic for the {@link TimeStamp} entity.

@@ -1,14 +1,7 @@
 package de.pls.stundenplaner.controller;
 
-import de.pls.stundenplaner.service.AssignmentService;
-import de.pls.stundenplaner.service.AuthService;
-import de.pls.stundenplaner.dto.request.auth.LoginRequest;
-import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
-import de.pls.stundenplaner.dto.response.auth.LoginResponse;
-import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
-import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
-import de.pls.stundenplaner.util.exceptions.UserAlreadyExistsException;
-import jakarta.validation.Valid;
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -16,7 +9,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.UUID;
+import de.pls.stundenplaner.dto.request.auth.LoginRequest;
+import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
+import de.pls.stundenplaner.dto.response.auth.LoginResponse;
+import de.pls.stundenplaner.service.AuthService;
+import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
+import de.pls.stundenplaner.util.exceptions.UserAlreadyExistsException;
+import jakarta.validation.Valid;
 
 /**
  * Handles Web Requests for the Authentication via {@link AuthService}
