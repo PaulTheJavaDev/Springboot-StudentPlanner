@@ -1,32 +1,32 @@
 package de.pls.stundenplaner.service;
 
-import de.pls.stundenplaner.dto.request.assignment.CreateAssignmentRequest;
-import de.pls.stundenplaner.dto.request.assignment.UpdateAssignmentRequest;
-import de.pls.stundenplaner.model.Subject;
-import de.pls.stundenplaner.repository.AssignmentRepository;
-import de.pls.stundenplaner.model.Assignment;
-import de.pls.stundenplaner.model.User;
-import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
-import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Service;
+
+import de.pls.stundenplaner.dto.request.assignment.CreateAssignmentRequest;
+import de.pls.stundenplaner.dto.request.assignment.UpdateAssignmentRequest;
+import de.pls.stundenplaner.model.Assignment;
+import de.pls.stundenplaner.model.Subject;
+import de.pls.stundenplaner.model.User;
+import de.pls.stundenplaner.repository.AssignmentRepository;
 import static de.pls.stundenplaner.util.UserUtil.checkUserExistenceBySessionID;
+import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
+import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Business logic for the {@link Assignment} Entity
  */
 @Service
 @RequiredArgsConstructor
-public final class AssignmentService {
+public class AssignmentService {
 
     private final AssignmentRepository assignmentRepository;
 

@@ -1,12 +1,21 @@
 package de.pls.stundenplaner.model;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a TimeStamp in the Scheduler belonging to a specific user.<br><br>
@@ -35,10 +44,10 @@ public final class TimeStamp {
     private ScheduleDay scheduleDay;
 
     public TimeStamp(
-            @NonNull final String type
+            @NonNull final String blockType
     ) {
-        this.type = type;
-        this.text = (type.equalsIgnoreCase("Lesson")) ? "Lesson" : "Break";
+        this.type = blockType;
+        this.text = (blockType.equalsIgnoreCase("Lesson")) ? "Lesson" : "Break";
     }
 
 }

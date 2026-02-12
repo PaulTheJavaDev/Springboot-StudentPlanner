@@ -1,13 +1,14 @@
 package de.pls.stundenplaner.util;
 
-import de.pls.stundenplaner.repository.UserRepository;
-import de.pls.stundenplaner.model.User;
-import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
-import lombok.NonNull;
+import java.util.UUID;
+
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+import de.pls.stundenplaner.model.User;
+import de.pls.stundenplaner.repository.UserRepository;
+import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
+import lombok.NonNull;
 
 /**
  * A class for User-Database related Helper methods.
@@ -23,7 +24,7 @@ public class UserUtil {
 
     /**
      * Helper method that acts as a shorter way
-     * to access the Database to find a User by a SessionID
+     * to access the User found by a SessionID in the Database.
      *
      * @param sessionID A valid SessionID
      * @return A {@link User} Object or {@link InvalidSessionException} when User not found

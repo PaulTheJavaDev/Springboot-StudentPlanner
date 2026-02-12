@@ -20,16 +20,7 @@ public class InvalidSessionException extends Exception {
      * Creates an {@link InvalidSessionException} with a default error message.
      */
     public InvalidSessionException() {
-        super("Invalid SessionID. Please log in to obtain a valid SessionID.");
-    }
-
-    /**
-     * Creates an {@link InvalidSessionException} with a custom error message.
-     *
-     * @param message detailed error description
-     */
-    public InvalidSessionException(String message) {
-        super(message);
+        super("Invalid SessionID.");
     }
 
 }

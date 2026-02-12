@@ -126,42 +126,46 @@ async function getSubjects() {
 }
 
 // Context menu creation
-function createMenu(options, button) {
-
+// Context menu creation
+function createMenu(options, menuButton) {
     const menu = document.createElement('div');
     menu.className = 'contextMenu';
-
+    menu.style.display = 'none';  // Initial versteckt
+    
     options.forEach(option => {
-
-        const button = document.createElement('button');
-        button.textContent = option.label;
-
-        button.onclick = () => {
-            option.action(); menu.style.display = 'none';
+        const optionButton = document.createElement('button');
+        optionButton.className = 'contextMenuOption';
+        optionButton.textContent = option.label;
+        optionButton.onclick = () => {
+            option.action();
+            menu.style.display = 'none';
         };
-
-        menu.appendChild(button);
+        menu.appendChild(optionButton);
     });
-
+    
     document.body.appendChild(menu);
-
-    button.onclick = () => {
-        const rect = button.getBoundingClientRect();
+    
+    menuButton.onclick = (event) => {
+        event.stopPropagation();  // Verhindert sofortiges Schließen
+        
+        const rect = menuButton.getBoundingClientRect();
         menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
         menu.style.left = `${rect.left + window.scrollX}px`;
         menu.style.display = 'block';
-
+        
         const handleClickOutside = (event) => {
-
-            if (!menu.contains(event.target) && event.target !== button) {
+            if (!menu.contains(event.target) && event.target !== menuButton) {
                 menu.style.display = 'none';
                 document.removeEventListener('click', handleClickOutside);
             }
-
         };
-        document.addEventListener('click', handleClickOutside);
+        
+        // Kleine Verzögerung, damit dieser Click nicht sofort das Menu schließt
+        setTimeout(() => {
+            document.addEventListener('click', handleClickOutside);
+        }, 0);
     };
-
+    
     return menu;
 }
 
