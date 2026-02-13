@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("unused")
 public class AssignmentTest {
 
     private final LocalDate futureDate = LocalDate.now().plusYears(1);
