@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 
+import de.pls.stundenplaner.auth.User;
 import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 
 public class UserTest {

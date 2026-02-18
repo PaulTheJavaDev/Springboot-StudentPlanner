@@ -1,8 +1,8 @@
 package de.pls.stundenplaner.dto.request.assignment;
 
-import de.pls.stundenplaner.model.Subject;
-
 import java.time.LocalDate;
+
+import de.pls.stundenplaner.subjects.Subject;
 
 public record UpdateAssignmentRequest(
         Subject subject,

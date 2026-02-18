@@ -11,11 +11,12 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 
+import de.pls.stundenplaner.auth.AuthService;
+import de.pls.stundenplaner.auth.User;
+import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.dto.request.auth.LoginRequest;
 import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
 import de.pls.stundenplaner.dto.response.auth.LoginResponse;
-import de.pls.stundenplaner.model.User;
-import de.pls.stundenplaner.repository.UserRepository;
 import de.pls.stundenplaner.util.PasswordHasher;
 import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidLoginException;

@@ -126,7 +126,6 @@ async function getSubjects() {
 }
 
 // Context menu creation
-// Context menu creation
 function createMenu(options, menuButton) {
     const menu = document.createElement('div');
     menu.className = 'contextMenu';
@@ -257,20 +256,21 @@ async function addItem(dayOfWeek, type) {
     container.appendChild(createTimeStampElement(dayOfWeek, timestamp));
 }
 
-// Event bindings
-document.querySelectorAll('.addLesson').forEach(button => button.onclick = element => addItem(element.target.closest('.hoursContainer').id, 'lesson'));
-document.querySelectorAll('.addBreak').forEach(button => button.onclick = element => addItem(element.target.closest('.hoursContainer').id, 'break'));
-document.querySelectorAll('.assignmentsButton').forEach(button => button.onclick = () => window.location.href = '/assignments/index.html');
-document.querySelectorAll('.examsButton').forEach(button => button.onclick = () => window.location.href = '/exams/index.html');
-
-document.getElementById('logoutButton').onclick = () => {
-    sessionStorage.removeItem('SessionID');
-    window.location.href = '/login/index.html';
-};
-
 // Initialize
 window.addEventListener('DOMContentLoaded', () => {
     validateSessionAuth();
+    
+    document.querySelectorAll('.addLesson').forEach(button => button.onclick = element => addItem(element.target.closest('.hoursContainer').id, 'lesson'));
+    document.querySelectorAll('.addBreak').forEach(button => button.onclick = element => addItem(element.target.closest('.hoursContainer').id, 'break'));
+    document.querySelectorAll('.testButton').forEach(button => button.onclick = () => {
+        window.location.href = '/test/index.html';
+        console.log('Navigating to test page');
+    });
+
+    document.getElementById('logoutButton').onclick = () => {
+        sessionStorage.removeItem('SessionID');
+        window.location.href = '/login/index.html';
+    };
 
     if (!sessionStorage.getItem('SessionID')) {
         window.location.href = '/login/index.html';

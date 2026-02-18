@@ -18,11 +18,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 
+import de.pls.stundenplaner.assignments.Assignment;
+import de.pls.stundenplaner.assignments.AssignmentRepository;
+import de.pls.stundenplaner.assignments.AssignmentService;
+import de.pls.stundenplaner.auth.User;
 import de.pls.stundenplaner.dto.request.assignment.CreateAssignmentRequest;
-import de.pls.stundenplaner.model.Assignment;
-import de.pls.stundenplaner.model.Subject;
-import de.pls.stundenplaner.model.User;
-import de.pls.stundenplaner.repository.AssignmentRepository;
+import de.pls.stundenplaner.subjects.Subject;
 import de.pls.stundenplaner.util.UserUtil;
 import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;

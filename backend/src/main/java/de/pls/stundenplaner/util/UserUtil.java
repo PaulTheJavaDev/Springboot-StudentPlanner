@@ -5,8 +5,8 @@ import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import de.pls.stundenplaner.model.User;
-import de.pls.stundenplaner.repository.UserRepository;
+import de.pls.stundenplaner.auth.User;
+import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import lombok.NonNull;
 

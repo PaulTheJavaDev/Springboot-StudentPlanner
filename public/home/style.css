@@ -61,8 +61,7 @@
 }
 
 .logoutButton,
-.assignmentsButton,
-.examsButton {
+.testButton {
     text-align: center;
     width: 8rem;
     margin: auto;

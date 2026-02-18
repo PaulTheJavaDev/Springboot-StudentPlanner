@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
+import de.pls.stundenplaner.assignments.Assignment;
+import de.pls.stundenplaner.subjects.Subject;
+
 @SuppressWarnings("unused")
 public class AssignmentTest {
 
