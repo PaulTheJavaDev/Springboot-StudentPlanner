@@ -1,245 +1,197 @@
 :root {
-    --cornerRadius: 14px;
-    --lesson-bg: linear-gradient(135deg, #bca9e1 0%, #a891d4 100%);
-    --break-bg: linear-gradient(135deg, #e7eca3 0%, #dce291 100%);
-    --font: bold 1rem -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    --border-color: #e5e7eb;
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.12);
+    --cornerRadius: 0.5rem;
+    --lesson-bg: #a8edea;
+    --break-bg: #fff1a1;
+    --font: 600 1rem -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --border-color: #e0e0e0;
+    --shadow-sm: 0 3px 6px rgba(0,0,0,.1);
+    --shadow-md: 0 8px 24px rgba(0,0,0,.15);
+    --topbar-bg: linear-gradient(to bottom, #ffffff, #f2f2f2);
 }
 
+/* ---------- BODY ---------- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f9f9f9;
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------- TopBar ---------- */
 .topBar {
-    position: relative;
     display: flex;
     align-items: center;
-    padding: 1.5rem 2.5rem;
+    justify-content: flex-end; /* Buttons rechts */
+    padding: 1rem 2rem;
+    background: var(--topbar-bg);
     border-bottom: 1px solid var(--border-color);
-    background: linear-gradient(to bottom, #ffffff, #f8f8f8);
     box-shadow: var(--shadow-sm);
+    position: relative;
 }
 
-.navRight {
-    margin-left: auto;
-}
-
-.navCurrent {
-    font-size: 0.9rem;
-    color: #6b7280;
-    text-decoration: none;
-    pointer-events: none;
-    font: var(--font);
-    font-size: 0.875rem;
-    padding: 0.4rem 0.8rem;
-    background-color: #f3f4f6;
-    border-radius: 6px;
-}
-
-.logoutButton:active {
-    transform: translateY(0);
-}
-
-.PageTitle {
+.topBar h1 {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     margin: 0;
-    font: bold 2.5rem -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    color: #111827;
-    pointer-events: none;
+    font-size: 2rem;
 }
 
-/* Navigation buttons */
-.buttonContainer {
-    margin: auto;
-    margin-top: 0.5rem;
-    width: 18rem;
-    text-align: center;
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 2.5rem;
-}
-
-.logoutButton,
-.testButton {
-    text-align: center;
-    width: 8rem;
-    margin: auto;
-    
-    font: var(--font);
-    font-style: bold;
-    font-size: 0.9rem;
-
+.topBar button {
+    margin-left: 0.5rem;
+    padding: 0.4rem 0.8rem;
     border-radius: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
     cursor: pointer;
-    padding: 0.5rem 1.2rem;
-    border: 2px solid #e5e7eb;
-    background-color: white;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: var(--shadow-sm);
+    font-weight: 600;
+    transition: all 0.2s ease;
 }
 
-/* This should overwwrite the previous given width */
-.logoutButton {
-    width: 6rem;
+.topBar button:hover {
+    background: #f0f0f0;
 }
 
-.logoutButton:hover,
-.assignmentsButton:hover,
-.examsButton:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
-    border-color: #dbdbdb;
-}
-
-/* Days */
+/* ---------- Days Container ---------- */
 .daysContainer {
     display: flex;
-    gap: 2rem;
+    gap: 1.5rem;
     justify-content: center;
-    align-items: flex-start;
-    max-width: 100%;
-    overflow-x: auto;
     padding: 2rem;
-
-    scrollbar-width: thin;
-    scrollbar-color: #d1d5db #f3f4f6;
+    flex-wrap: wrap;
 }
 
+/* ---------- Hours Container ---------- */
 .hoursContainer {
+    flex: 1 1 150px;
+    min-width: 180px;
+    max-width: 200px;
+    padding: 1rem;
+    border-radius: var(--cornerRadius);
+    background: #fff;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    min-width: 14rem;
     align-items: center;
-    border: 2px solid var(--border-color);
-    padding: 1.5rem;
-    border-radius: 16px;
-    background: linear-gradient(to bottom, #ffffff, #fafbfc);
-    box-shadow: var(--shadow-md);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    gap: 0.5rem;
+    transition: transform 0.2s ease;
 }
 
 .hoursContainer:hover {
-    box-shadow: var(--shadow-lg);
-    border-color: #d1d5db;
-}
-
-.DayHeader {
-    font: var(--font);
-    font-size: 1.4rem;
-    font-style: bold;
-    color: #111827;
-    margin-bottom: 0.75rem;
-    letter-spacing: -0.3px;
-}
-
-/* Entries */
-.lesson,
-.break {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font: var(--font);
-    padding: 1rem;
-    border-radius: var(--cornerRadius);
-    position: relative;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.lesson:hover,
-.break:hover {
     transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-    border-color: rgba(255, 255, 255, 0.5);
 }
 
-.lesson {
-    background: var(--lesson-bg);
-    min-height: 5.5rem;
-    color: #1f2937;
+/* ---------- Day Header ---------- */
+.DayHeader {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-align: center;
 }
 
-.break {
-    background: var(--break-bg);
-    min-height: 2.2rem;
-    color: #374151;
-}
-
-.editButton {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    width: 1.75rem;
-    height: 1.75rem;
-    font-size: 1.1rem;
-    cursor: pointer;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1.5px solid rgba(0, 0, 0, 0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.editButton:hover {
-    background: white;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.editButton:active {
-    transform: scale(0.95);
-}
-
+/* ---------- Add Buttons ---------- */
 .addLesson,
 .addBreak {
-    font: 600 0.9rem -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    border-radius: 10px;
+    width: 100%;
+    padding: 0.5rem;
+    font: var(--font);
+    border-radius: 12px;
+    border: 2px dashed var(--border-color);
+    background: #fafafa;
     cursor: pointer;
-    padding: 0.6rem 1.2rem;
-    border: 2px solid var(--border-color);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
 }
 
 .addLesson:hover,
 .addBreak:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    background: #f0f0f0;
 }
 
-.addLesson:active,
-.addBreak:active {
-    transform: translateY(0);
+/* ---------- Entries ---------- */
+.lesson,
+.break {
+    width: 100%;
+    padding: 0.6rem;
+    border-radius: var(--cornerRadius);
+    text-align: center;
+    font: var(--font);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
 }
 
+.lesson {
+    background: var(--lesson-bg);
+}
+
+.break {
+    background: var(--break-bg);
+}
+
+/* ---------- Edit Button ---------- */
+.editButton {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,.9);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.editButton:hover {
+    background: rgba(255,255,255,1);
+}
+
+/* ---------- Context Menu ---------- */
 .contextMenu {
     position: absolute;
-    display: none;
-
-    display: flex;
-    flex-direction: column;
-    background: color(0, 0, 0, 0);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-lg);
-    z-index: 10;
+    background: #fff;
     border-radius: 12px;
+    box-shadow: var(--shadow-md);
     overflow: hidden;
-    animation: menuFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: none;
+    z-index: 100;
 }
 
-@keyframes menuFadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95) translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
+.contextMenu button {
+    padding: 0.6rem 1rem;
+    width: 100%;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.contextMenu button:hover {
+    background: #f3f3f3;
+}
+
+.buttonContainer {
+    display: flex;
+    justify-content: center; /* Zentriert den Inhalt horizontal */
+    margin: 2rem 0;          /* Abstand oben und unten */
+}
+
+.buttonContainer .schoolworkButton {
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.buttonContainer .schoolworkButton:hover {
+    background: #eaeaea;
 }
