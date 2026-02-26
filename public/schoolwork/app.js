@@ -147,7 +147,7 @@ const saveEdit = async (entry, fieldElements) => {
 
   if (!subject || !dueDate || !notes) {
     showMessage("Please fill in all fields.", 1.5);
-    return false;
+    return false; 
   }
 
   Object.assign(entry, { subject, dueDate, notes, completed });
