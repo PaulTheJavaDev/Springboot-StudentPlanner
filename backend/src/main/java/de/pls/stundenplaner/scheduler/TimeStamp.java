@@ -17,6 +17,8 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 
+import java.util.UUID;
+
 /**
  * Represents a TimeStamp in the Scheduler belonging to a specific user.<br><br>
  * Can represent two states: {@code Lesson} or {@code Break}
@@ -38,10 +40,8 @@ public final class TimeStamp {
     @NotNull
     private String text;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "schedule_day_id")
-    @JsonBackReference
-    private ScheduleDay scheduleDay;
+    private DayOfWeek dayOfWeek;
+    private UUID userUUID;
 
     public TimeStamp(
             @NonNull final String blockType

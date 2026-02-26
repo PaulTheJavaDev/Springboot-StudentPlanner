@@ -1,5 +1,5 @@
 import { HOME_URL, HOST } from "/modules/Config.js";
-import { getSession } from "/modules/Security.js";
+import { validateSessionAuth } from "/modules/Security.js";
 
 const elements = {
     feedbackElement: document.getElementById("responseLabel")
@@ -11,19 +11,18 @@ const errorMessages = {
 };
 
 function showResponse(message, duration = 1500) {
+    if (!elements.feedbackElement) return;
     elements.feedbackElement.textContent = message;
     setTimeout(() => elements.feedbackElement.textContent = "", duration);
 }
-
-const SessionID = getSession();
 
 async function apiRequest(method, url, data) {
     try {
         const response = await fetch(url, {
             method,
+            credentials: "include",
             headers: {
-                "Content-Type": "application/json",
-                "SessionID": SessionID
+                "Content-Type": "application/json"
             },
             body: data ? JSON.stringify(data) : undefined
         });
@@ -45,13 +44,9 @@ const apiPost = (url, data) => apiRequest("POST", url, data);
 const apiPut = (url, data) => apiRequest("PUT", url, data);
 const apiDelete = (url) => apiRequest("DELETE", url);
 
-/* ---------------- DATA ---------------- */
-
 async function getSubjects() {
-    return apiGet(`${HOST}/subjects`);
+    return apiRequest("GET", `${HOST}/subjects`);
 }
-
-/* ---------------- CONTEXT MENU ---------------- */
 
 function createMenu(options, button) {
     const menu = document.createElement("div");
@@ -153,22 +148,28 @@ function createTimeStampElement(dayOfWeek, data) {
     return div;
 }
 
-/* ---------------- SCHEDULE ---------------- */
-
 async function loadSchedule() {
-    const days = await apiGet();
-    if (!days) return;
+    const timeStamps = await apiGet();
+    if (!timeStamps) return;
 
-    days.forEach(day => {
-        const container = document.getElementById(day.dayOfWeek);
+    // Group flat TimeStamp list by dayOfWeek
+    const grouped = timeStamps.reduce((acc, ts) => {
+        if (!acc[ts.dayOfWeek]) acc[ts.dayOfWeek] = [];
+        acc[ts.dayOfWeek].push(ts);
+        return acc;
+    }, {});
+
+    Object.entries(grouped).forEach(([dayOfWeek, stamps]) => {
+        const container = document.getElementById(dayOfWeek);
         if (!container) return;
 
         container.querySelectorAll(".lesson, .break").forEach(e => e.remove());
 
-        day.timeStamps
+        stamps
             .sort((a, b) => a.id - b.id)
-            .forEach(ts => container.appendChild(
-                createTimeStampElement(day.dayOfWeek, ts)
+            .forEach(ts => container.insertBefore(
+                createTimeStampElement(dayOfWeek, ts),
+                container.querySelector(".addLesson")
             ));
     });
 }
@@ -188,10 +189,8 @@ async function addItem(dayOfWeek, type) {
     container.insertBefore(element, container.querySelector(".addLesson"));
 }
 
-/* ---------------- INIT ---------------- */
-
-window.addEventListener("DOMContentLoaded", () => {
-    validateSessionAuth();
+window.addEventListener("DOMContentLoaded", async () => {
+    await validateSessionAuth();
 
     document.querySelectorAll(".addLesson")
         .forEach(button => button.onclick = element => addItem(element.target.closest(".hoursContainer").id, "lesson"));
@@ -199,15 +198,10 @@ window.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".addBreak")
         .forEach(button => button.onclick = element => addItem(element.target.closest(".hoursContainer").id, "break"));
 
-    document.getElementById("logoutButton").onclick = () => {
-        sessionStorage.removeItem("SessionID");
+    document.getElementById("logoutButton").onclick = async () => {
+        await fetch(`${HOST}/auth/logout`, { method: "POST", credentials: "include" });
         location.href = "/login/index.html";
     };
-
-    if (!sessionStorage.getItem("SessionID")) {
-        location.href = "/login/index.html";
-        return;
-    }
 
     loadSchedule();
 });

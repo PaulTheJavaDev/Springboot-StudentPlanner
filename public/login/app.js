@@ -1,16 +1,13 @@
 import { LOGIN_URL, REGISTER_URL } from "../modules/Config.js";
 import { getSession } from "../modules/Security.js";
+import { UserSpecificErrors, LoginErrors, defaultError } from "../modules/Errors.js";
 
-let SessionID = null;
+let SessionID;
 
-// --- Utility functions ---
-
-// Prüft, ob ein Wert "leer" ist
 function isEmpty(value) {
     return value === null || value === undefined || (typeof value === "string" && value.trim() === "") || value === "null";
 }
 
-// Zeigt Feedback für 1,5 Sekunden an
 function showResponse(response) {
     elements.feedbackElement.textContent = response;
     setTimeout(() => {
@@ -18,12 +15,10 @@ function showResponse(response) {
     }, 1500);
 }
 
-// Prüft, ob Session gültig ist
 function isSessionValid(sessionID) {
     return !isEmpty(sessionID);
 }
 
-// --- Session Check beim Laden ---
 async function checkSessionAndRedirect() {
     const sessionID = await getSession();
     if (isSessionValid(sessionID)) {
@@ -33,7 +28,6 @@ async function checkSessionAndRedirect() {
 
 checkSessionAndRedirect();
 
-// --- DOM Elements ---
 const elements = {
     usernameElement: document.getElementById("authUsername"),
     passwordElement: document.getElementById("authPassword"),
@@ -42,18 +36,10 @@ const elements = {
     registerButton: document.getElementById("registerBtn")
 };
 
-const errorMessages = {
-    invalidLoginCredentials: "Invalid Username or Password.",
-    invalidRegisterCredentials: "Username already exists.",
-    emptyFields: "Please fill the input-fields.",
-    defaultError: "Something went wrong"
-}
-
-// --- Login Funktion ---
 async function login(username, password) {
 
     if (isEmpty(username) || isEmpty(password)) {
-        showResponse(errorMessages.emptyFields);
+        showResponse(LoginErrors.emptyFields);
         return false;
     }
 
@@ -66,28 +52,26 @@ async function login(username, password) {
             body: JSON.stringify({ username, password })
         });
     } catch (error) {
-        showResponse(errorMessages.defaultError);
+        showResponse(defaultError);
         return false;
     }
 
-    if (!result.ok) {
-        showResponse(errorMessages.invalidLoginCredentials);
+    if (result.status === 409) {
+        showResponse(UserSpecificErrors.usernameAlreadyExists);
         return false;
     }
 
-    // Sicheres JSON Handling
     let data = {};
     try {
         const text = await result.text();
         if (text) {
             data = JSON.parse(text);
         }
-    } catch (e) {
-        console.warn("Server liefert kein JSON:", e);
+    } catch (error) {
+        console.warn("Server liefert kein JSON:", error);
         data = {};
     }
 
-    // SessionID setzen
     SessionID = data.sessionID || sessionStorage.getItem("SessionID") || null;
     if (isSessionValid(SessionID)) {
         sessionStorage.setItem("SessionID", SessionID);
@@ -96,7 +80,6 @@ async function login(username, password) {
     return true;
 }
 
-// --- Register Funktion ---
 async function register(username, password) {
 
     if (isEmpty(username) || isEmpty(password)) {
@@ -125,7 +108,6 @@ async function register(username, password) {
     return true;
 }
 
-// --- Button Handlers ---
 async function handleLoginPress() {
     const username = elements.usernameElement.value.trim();
     const password = elements.passwordElement.value.trim();
@@ -159,9 +141,8 @@ async function handleRegisterPress() {
     }
 }
 
-// --- UI Binding ---
 function checkElementsAndBind() {
-    if (!Object.values(elements).every(el => el !== null)) {
+    if (!Object.values(elements).every(element => element !== null)) {
         console.error("Some required elements are missing!");
         return false;
     }

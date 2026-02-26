@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import de.pls.stundenplaner.dto.request.auth.LoginRequest;
 import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
-import de.pls.stundenplaner.dto.response.auth.LoginResponse;
 import de.pls.stundenplaner.util.PasswordHasher;
 import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
@@ -33,7 +32,7 @@ public class AuthService {
      * @return A DTO for the Login {@code response} part which returns the SessionID for the Frontend to handle.
      * @throws InvalidLoginException Thrown if the credentials from the request DTO are invalid.
      */
-    public LoginResponse checkLogin(
+    public void checkLogin(
             final @NotNull @NonNull LoginRequest loginRequest
     ) throws InvalidLoginException {
 
@@ -50,7 +49,6 @@ public class AuthService {
         user.setSessionID(sessionID);
         userRepository.save(user);
 
-        return new LoginResponse(sessionID);
     }
 
     /**

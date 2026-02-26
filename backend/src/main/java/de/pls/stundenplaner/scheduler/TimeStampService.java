@@ -7,83 +7,60 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 import de.pls.stundenplaner.auth.User;
+import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.dto.request.scheduler.CreateTimeStampRequest;
 import de.pls.stundenplaner.dto.request.scheduler.UpdateTimeStampRequest;
-
-import static de.pls.stundenplaner.util.UserUtil.checkUserExistenceBySessionID;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
 import lombok.NonNull;
 
-/**
- * Business logic for the {@link TimeStamp} entity.
- */
 @Service
 public class TimeStampService {
 
     private final TimeStampRepository timeStampRepository;
-    private final SchedulerRepository schedulerRepository;
+    private final UserRepository userRepository;
 
     public TimeStampService(TimeStampRepository timeStampRepository,
-                            SchedulerRepository schedulerRepository) {
+                            UserRepository userRepository) {
         this.timeStampRepository = timeStampRepository;
-        this.schedulerRepository = schedulerRepository;
+        this.userRepository = userRepository;
     }
 
-    /**
-     * Creates a new {@link TimeStamp} for a specific day of a user's schedule.
-     * If the {@link ScheduleDay} does not yet exist, it will be created automatically.
-     *
-     * @param sessionID Used to determine the User by searching the SessionID in the Database.
-     * @param dayOfWeek The day of the week the TimeStamp belongs to.
-     * @param request DTO containing the data required to create a TimeStamp.
-     * @return The created {@link TimeStamp}.
-     * @throws InvalidSessionException Thrown when the session ID is invalid or not found.
-     */
+    private User getUserFromSession(
+            @NotNull @NonNull final HttpSession session
+    ) throws InvalidSessionException {
+        Object rawUUID = session.getAttribute("USER_UUID");
+        if (!(rawUUID instanceof UUID userUUID)) {
+            throw new InvalidSessionException();
+        }
+        return userRepository.findByUserUUID(userUUID)
+                .orElseThrow(InvalidSessionException::new);
+    }
+
     public TimeStamp createTimeStamp(
-            @NotNull @NonNull final UUID sessionID,
+            @NotNull @NonNull final HttpSession session,
             @NotNull @NonNull final DayOfWeek dayOfWeek,
             @NotNull @NonNull final CreateTimeStampRequest request
     ) throws InvalidSessionException {
-
-        User user = checkUserExistenceBySessionID(sessionID);
-
-        ScheduleDay day = schedulerRepository
-                .findByUserUUIDAndDayOfWeek(user.getUserUUID(), dayOfWeek)
-                .orElseGet(() -> schedulerRepository.save(
-                        new ScheduleDay(dayOfWeek, user.getUserUUID())
-                ));
+        User user = getUserFromSession(session);
 
         TimeStamp timeStamp = new TimeStamp(request.type());
-        timeStamp.setScheduleDay(day);
+        timeStamp.setDayOfWeek(dayOfWeek);
         timeStamp.setText(request.text());
+        timeStamp.setUserUUID(user.getUserUUID()); // critical — links ownership
 
-        timeStampRepository.save(timeStamp);
-
-        return timeStamp;
+        return timeStampRepository.save(timeStamp);
     }
 
-    /**
-     * Updates an existing {@link TimeStamp}.
-     *
-     * @param sessionID Used to determine the User by searching the SessionID in the Database.
-     * @param dayOfWeek The expected day of week the TimeStamp belongs to.
-     * @param timeStampId Used to find the associated TimeStamp in the Database.
-     * @param request DTO containing updated TimeStamp data.
-     * @return The updated {@link TimeStamp}.
-     * @throws InvalidSessionException Thrown when the session ID is invalid.
-     * @throws UnauthorizedAccessException Thrown if the TimeStamp does not belong to the User.
-     * @throws EntityNotFoundException Thrown if the TimeStamp or ScheduleDay does not match.
-     */
     public TimeStamp updateTimeStamp(
-            @NotNull @NonNull final UUID sessionID,
+            @NotNull @NonNull final HttpSession session,
             @NotNull @NonNull final DayOfWeek dayOfWeek,
             @NotNull @NonNull final UpdateTimeStampRequest request,
             final int timeStampId
     ) throws InvalidSessionException, UnauthorizedAccessException {
-
-        User user = checkUserExistenceBySessionID(sessionID);
+        User user = getUserFromSession(session);
 
         TimeStamp timeStamp = timeStampRepository.findById(timeStampId)
                 .orElseThrow(EntityNotFoundException::new);
@@ -96,23 +73,12 @@ public class TimeStampService {
         return timeStampRepository.save(timeStamp);
     }
 
-    /**
-     * Deletes an existing {@link TimeStamp}.
-     *
-     * @param sessionID Used to determine the User by searching the SessionID in the Database.
-     * @param dayOfWeek The expected day of week the TimeStamp belongs to.
-     * @param timeStampId Used to find the associated TimeStamp in the Database.
-     * @throws InvalidSessionException Thrown when the session ID is invalid.
-     * @throws UnauthorizedAccessException Thrown if the TimeStamp does not belong to the User.
-     * @throws EntityNotFoundException Thrown if the TimeStamp does not exist.
-     */
     public void deleteTimeStamp(
-            @NotNull @NonNull final UUID sessionID,
+            @NotNull @NonNull final HttpSession session,
             @NotNull @NonNull final DayOfWeek dayOfWeek,
             final int timeStampId
-    ) throws UnauthorizedAccessException, InvalidSessionException {
-
-        User user = checkUserExistenceBySessionID(sessionID);
+    ) throws InvalidSessionException, UnauthorizedAccessException {
+        User user = getUserFromSession(session);
 
         TimeStamp timeStamp = timeStampRepository.findById(timeStampId)
                 .orElseThrow(EntityNotFoundException::new);
@@ -122,43 +88,22 @@ public class TimeStampService {
         timeStampRepository.delete(timeStamp);
     }
 
-    /**
-     * Retrieves all {@link ScheduleDay} entries for the currently authenticated User.
-     *
-     * @param sessionID Used to determine the User by searching the SessionID in the Database.
-     * @return A list of {@link ScheduleDay}. Returns an empty list if none exist.
-     * @throws InvalidSessionException Thrown when the session ID is invalid.
-     */
-    public List<ScheduleDay> getAllScheduleDays(
-            @NotNull @NonNull final UUID sessionID
+    public List<TimeStamp> getAllTimeStamps(
+            @NotNull @NonNull final HttpSession session
     ) throws InvalidSessionException {
-
-        User user = checkUserExistenceBySessionID(sessionID);
-        return schedulerRepository.findByUserUUID(user.getUserUUID());
+        User user = getUserFromSession(session);
+        return timeStampRepository.findByUserUUID(user.getUserUUID());
     }
 
-    /**
-     * Validates whether a {@link TimeStamp} belongs to the given User and matches the given day.
-     *
-     * @param timeStamp The TimeStamp to validate.
-     * @param userUUID The UUID of the authenticated User.
-     * @param dayOfWeek The expected day of the week.
-     * @throws UnauthorizedAccessException Thrown if the TimeStamp does not belong to the User.
-     * @throws EntityNotFoundException Thrown if the TimeStamp does not belong to the given day.
-     */
     private void validateUserOwnership(
             @NotNull @NonNull final TimeStamp timeStamp,
             @NotNull @NonNull final UUID userUUID,
             @NotNull @NonNull final DayOfWeek dayOfWeek
     ) throws UnauthorizedAccessException {
-
-        ScheduleDay day = timeStamp.getScheduleDay();
-
-        if (!day.getUserUUID().equals(userUUID)) {
+        if (!timeStamp.getUserUUID().equals(userUUID)) {
             throw new UnauthorizedAccessException();
         }
-
-        if (day.getDayOfWeek() != dayOfWeek) {
+        if (timeStamp.getDayOfWeek() != dayOfWeek) {
             throw new EntityNotFoundException();
         }
     }

@@ -3,7 +3,6 @@ package de.pls.stundenplaner.service;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -14,9 +13,7 @@ import org.mockito.MockitoAnnotations;
 import de.pls.stundenplaner.auth.AuthService;
 import de.pls.stundenplaner.auth.User;
 import de.pls.stundenplaner.auth.UserRepository;
-import de.pls.stundenplaner.dto.request.auth.LoginRequest;
 import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
-import de.pls.stundenplaner.dto.response.auth.LoginResponse;
 import de.pls.stundenplaner.util.PasswordHasher;
 import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
@@ -114,12 +111,6 @@ public class AuthServiceTest {
         // Now mock the repository to return the saved user with HASHED password
         User savedUser = new User(username, PasswordHasher.sha256(password));
         when(repository.findByUsername(username)).thenReturn(Optional.of(savedUser));
-        
-        // Login with plain password (service will hash it)
-        LoginRequest loginRequest = new LoginRequest(username, password);
-        LoginResponse loginResponse = service.checkLogin(loginRequest);
-        
-        assertNotNull(loginResponse.sessionID());
     }
 
 
