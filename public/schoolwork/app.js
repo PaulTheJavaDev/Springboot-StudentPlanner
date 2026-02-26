@@ -1,5 +1,5 @@
-import { validateSessionAuth, getSessionID } from "/modules/Security.js";
-import { HOST, ASSIGNMENTS_URL, EXAMS_URL } from "/modules/Config.js";
+import { validateSessionAuth } from "../modules/Security.js";
+import { HOST, ASSIGNMENTS_URL, EXAMS_URL } from "../modules/Config.js";
 
 validateSessionAuth();
 
@@ -11,21 +11,19 @@ const elements = {
   dueDate: document.getElementById("dueDateInput"),
   notes: document.getElementById("assignmentNotes"),
   submit: document.getElementById("submitAssignment"),
-  modeSelect: document.getElementById("modeSelect") // <-- neue Dropdown
+  modeSelect: document.getElementById("modeSelect")
 };
 
-// Aktueller Modus: "assignments" oder "exams"
 const getMode = () => elements.modeSelect.value;
 const getURL = () => getMode() === "exams" ? EXAMS_URL : ASSIGNMENTS_URL;
 
-// API CRUD Operations
 const fetchAll = async () => {
   const response = await fetch(getURL(), {
     method: "GET",
     headers: {
-      "Content-Type": "application/json",
-      "SessionID": getSessionID()
-    }
+      "Content-Type": "application/json"
+    },
+    credentials: "include"
   });
   return response.json();
 };
@@ -34,9 +32,9 @@ const createEntry = async (data) => {
   const response = await fetch(getURL(), {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "SessionID": getSessionID()
+      "Content-Type": "application/json"
     },
+    credentials: "include",
     body: JSON.stringify(data)
   });
 
@@ -52,9 +50,9 @@ const updateEntry = async (id, data) => {
   const response = await fetch(`${getURL()}/${id}`, {
     method: "PUT",
     headers: {
-      "Content-Type": "application/json",
-      "SessionID": getSessionID()
+      "Content-Type": "application/json"
     },
+    credentials: "include",
     body: JSON.stringify(data)
   });
   return response.json();
@@ -64,9 +62,9 @@ const deleteEntry = async (id) => {
   const response = await fetch(`${getURL()}/${id}`, {
     method: "DELETE",
     headers: {
-      "Content-Type": "application/json",
-      "SessionID": getSessionID()
-    }
+      "Content-Type": "application/json"
+    },
+    credentials: "include"
   });
   return response.ok;
 };
@@ -75,9 +73,9 @@ const fetchSubjects = async () => {
   const response = await fetch(`${HOST}/subjects`, {
     method: "GET",
     headers: {
-      "Content-Type": "application/json",
-      "SessionID": getSessionID()
-    }
+      "Content-Type": "application/json"
+    },
+    credentials: "include"
   });
   return response.json();
 };
@@ -261,7 +259,6 @@ const noEntriesCheck = (length) => {
     : "";
 };
 
-// Liste leeren und neu laden
 const loadEntries = async () => {
   elements.container.innerHTML = "";
   const entries = await fetchAll();
@@ -296,7 +293,6 @@ const handleSubmit = async () => {
   }
 };
 
-// Modus-Wechsel: Liste neu laden
 elements.modeSelect.addEventListener("change", loadEntries);
 elements.submit.onclick = handleSubmit;
 

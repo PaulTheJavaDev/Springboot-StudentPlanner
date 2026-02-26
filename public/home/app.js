@@ -2,7 +2,8 @@ import { HOME_URL, HOST } from "/modules/Config.js";
 import { validateSessionAuth } from "/modules/Security.js";
 
 const elements = {
-    feedbackElement: document.getElementById("responseLabel")
+    feedbackElement: document.getElementById("responseLabel"),
+    schoolworkButton: document.getElementById("schoolworkButton"),
 };
 
 const errorMessages = {
@@ -191,6 +192,10 @@ async function addItem(dayOfWeek, type) {
 
 window.addEventListener("DOMContentLoaded", async () => {
     await validateSessionAuth();
+
+    document.getElementById("schoolworkButton").onclick = () => {
+        location.href = "/schoolwork/index.html";
+    };
 
     document.querySelectorAll(".addLesson")
         .forEach(button => button.onclick = element => addItem(element.target.closest(".hoursContainer").id, "lesson"));
