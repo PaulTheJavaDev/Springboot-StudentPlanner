@@ -1,5 +1,5 @@
-import { validateSessionAuth, getSessionID } from "/modules/Security.js";
 import { HOME_URL, HOST } from "/modules/Config.js";
+import { getSession } from "/modules/Security.js";
 
 const elements = {
     feedbackElement: document.getElementById("responseLabel")
@@ -15,7 +15,7 @@ function showResponse(message, duration = 1500) {
     setTimeout(() => elements.feedbackElement.textContent = "", duration);
 }
 
-/* ---------------- API ---------------- */
+const SessionID = getSession();
 
 async function apiRequest(method, url, data) {
     try {
@@ -23,7 +23,7 @@ async function apiRequest(method, url, data) {
             method,
             headers: {
                 "Content-Type": "application/json",
-                "SessionID": getSessionID()
+                "SessionID": SessionID
             },
             body: data ? JSON.stringify(data) : undefined
         });

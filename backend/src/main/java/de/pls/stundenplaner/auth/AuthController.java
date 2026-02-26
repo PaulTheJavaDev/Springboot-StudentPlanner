@@ -1,25 +1,24 @@
 package de.pls.stundenplaner.auth;
 
-import java.util.UUID;
-
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import de.pls.stundenplaner.dto.request.auth.LoginRequest;
 import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
-import de.pls.stundenplaner.dto.response.auth.LoginResponse;
 import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
 import de.pls.stundenplaner.util.exceptions.UserAlreadyExistsException;
 import jakarta.validation.Valid;
 
-/**
- * Handles Web Requests for the Authentication via {@link AuthService}
- */
 @Controller
 @RequestMapping("/auth")
 public class AuthController {
@@ -31,29 +30,46 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
-            @RequestBody final LoginRequest loginRequest
+    public ResponseEntity<String> login(
+            final @NotNull @NonNull @RequestBody LoginRequest loginRequest,
+            final @NotNull @NonNull HttpServletRequest request
     ) {
-
-        final UUID sessionID;
-
         try {
-            sessionID = authService.checkLogin(loginRequest).sessionID();
+            authService.checkLogin(loginRequest);
         } catch (InvalidLoginException e) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User does not have access to this feature.");
         }
 
-        return new ResponseEntity<>(new LoginResponse(sessionID), HttpStatus.OK);
+        final HttpSession session = request.getSession(true);
+        session.setAttribute("AUTHENTICATED", true);
 
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/register")
     public ResponseEntity<String> register(
             @RequestBody @Valid RegisterRequest registerRequest
-    ) throws UserAlreadyExistsException, EmptyUsernameException {
+    ) {
 
-        authService.registerUser(registerRequest);
-        return ResponseEntity.ok().build();
+        try {
+            authService.registerUser(registerRequest);
+            return ResponseEntity.ok("User registered");
+        } catch (UserAlreadyExistsException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Username already exists.");
+        }
+        catch (EmptyUsernameException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Username cannot be empty.");
+        }
+    }
 
+    @GetMapping("/check")
+    public ResponseEntity<String> checkSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        if (session != null && Boolean.TRUE.equals(session.getAttribute("AUTHENTICATED"))) {
+            return ResponseEntity.ok("{\"authenticated\":true}");
+        }
+
+        return ResponseEntity.ok("{\"authenticated\":false}");
     }
 }
