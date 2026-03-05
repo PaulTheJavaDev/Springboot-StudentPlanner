@@ -1,59 +1,65 @@
-package de.pls.stundenplaner.model;
+package de.pls.stundenplaner.assignments;
 
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
-import de.pls.stundenplaner.assignments.Assignment;
 import de.pls.stundenplaner.subjects.Subject;
 
 @SuppressWarnings("unused")
 public class AssignmentTest {
 
-    private final LocalDate futureDate = LocalDate.now().plusYears(1);
-    
+    private final LocalDate validDate = LocalDate.now().plusYears(1);
+    private final LocalDate invalidDate = LocalDate.now().minusYears(1);
+
+    // -- Valid Assignment Credentials -- //
+
     @Test
     void testAssignmentWithValidCredentials() {
 
         Assignment assignment = new Assignment(
                 Subject.MATH,
-                futureDate,
+                validDate,
                 "Complete exercises 1-10"
         );
 
         assertEquals(Subject.MATH, assignment.getSubject());
-        assertEquals(futureDate, assignment.getDueDate());
+        assertEquals(validDate, assignment.getDueDate());
         assertEquals("Complete exercises 1-10", assignment.getNotes());
 
     }
+
+    // -- Create Assignment with unique credentials -- //
 
     @Test
     void testAssignmentWithEmptyNotes() {
 
         Assignment assignment = new Assignment(
                 Subject.ENGLISH,
-                futureDate,
+                validDate,
                 ""
         );
 
         assertEquals(Subject.ENGLISH, assignment.getSubject());
-        assertEquals(futureDate, assignment.getDueDate());
+        assertEquals(validDate, assignment.getDueDate());
         assertEquals("", assignment.getNotes());
 
     }
+
+    // -- Create Assignment with invalid credentials -- //
 
     @Test
     void testAssignmentWithPastDueDate() {
 
         Assignment assignment = new Assignment(
                 Subject.HISTORY,
-                futureDate.minusYears(2),
+                invalidDate,
                 "Write a report on World War II"
         );
 
         assertEquals(Subject.HISTORY, assignment.getSubject());
-        assertEquals(futureDate.minusYears(2), assignment.getDueDate());
+        assertEquals(invalidDate, assignment.getDueDate());
         assertEquals("Write a report on World War II", assignment.getNotes());
 
     }

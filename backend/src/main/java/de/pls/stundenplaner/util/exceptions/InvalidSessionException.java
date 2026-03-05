@@ -23,4 +23,8 @@ public class InvalidSessionException extends Exception {
         super("Invalid SessionID.");
     }
 
+    public InvalidSessionException(String message) {
+        super(message);
+    }
+
 }

@@ -4,6 +4,7 @@ import de.pls.stundenplaner.auth.User;
 import de.pls.stundenplaner.dto.request.exam.CreateExamRequest;
 import de.pls.stundenplaner.dto.request.exam.UpdateExamRequest;
 import de.pls.stundenplaner.subjects.Subject;
+import de.pls.stundenplaner.util.UserUtil;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
@@ -40,9 +41,15 @@ public class ExamService {
      */
     public List<Exam> getAllExams(
             @NotNull @NonNull UUID sessionID
-    ) throws InvalidSessionException {
+    ) {
 
-        User user = checkUserExistenceBySessionID(sessionID);
+        User user;
+        try {
+            user = UserUtil.checkUserExistenceBySessionID(sessionID);
+        } catch (InvalidSessionException e) {
+            throw new RuntimeException(e);
+        }
+
         return examRepository.findExamsByUserUUID(user.getUserUUID());
     }
 
