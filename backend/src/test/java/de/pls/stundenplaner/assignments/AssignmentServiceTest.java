@@ -1,13 +1,15 @@
 package de.pls.stundenplaner.assignments;
 
 import de.pls.stundenplaner.auth.User;
+import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.dto.request.assignment.CreateAssignmentRequest;
 import de.pls.stundenplaner.dto.request.assignment.UpdateAssignmentRequest;
 import de.pls.stundenplaner.subjects.Subject;
-import de.pls.stundenplaner.util.UserUtil;
+import de.pls.stundenplaner.util.HttpStuff;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,17 +33,20 @@ class AssignmentServiceTest {
     @Mock
     private AssignmentRepository assignmentRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private AssignmentService assignmentService;
 
-    private UUID sessionID;
+    private HttpSession mockSession;
     private UUID userUUID;
     private User mockUser;
 
     @BeforeEach
     void setUp() {
-        sessionID = UUID.randomUUID();
-        userUUID  = UUID.randomUUID();
+        mockSession = mock(HttpSession.class);
+        userUUID = UUID.randomUUID();
         mockUser = mock(User.class);
     }
 
@@ -48,28 +54,32 @@ class AssignmentServiceTest {
 
     @Test
     void getAssignments_validSession_returnsList() throws InvalidSessionException {
+
         when(mockUser.getUserUUID()).thenReturn(userUUID);
         List<Assignment> expected = List.of(mock(Assignment.class));
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(assignmentRepository.findAssignmentsByUserUUID(userUUID))
                     .thenReturn(expected);
 
-            List<Assignment> result = assignmentService.getAssignments(sessionID);
+            List<Assignment> result = assignmentService.getAssignments(mockSession);
 
             assertThat(result).isEqualTo(expected);
         }
     }
 
     @Test
-    void getAssignments_invalidSession_throws() throws InvalidSessionException {
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
-                    .thenThrow(new InvalidSessionException("Invalid session"));
+    void getAssignments_invalidSession_throws() {
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
 
-            assertThatThrownBy(() -> assignmentService.getAssignments(sessionID))
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
+                    .thenThrow(InvalidSessionException.class);
+
+            assertThatThrownBy(() -> assignmentService.getAssignments(mockSession))
                     .isInstanceOf(InvalidSessionException.class);
         }
     }
@@ -78,16 +88,18 @@ class AssignmentServiceTest {
 
     @Test
     void createAssignment_validRequest_createsAndReturns() throws InvalidSessionException {
+
         when(mockUser.getUserUUID()).thenReturn(userUUID);
         LocalDate futureDate = LocalDate.now().plusDays(7);
         Subject subject = mock(Subject.class);
         CreateAssignmentRequest request = new CreateAssignmentRequest(subject, futureDate, "Some notes");
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
 
-            Assignment result = assignmentService.createAssignment(sessionID, request);
+            Assignment result = assignmentService.createAssignment(mockSession, request);
 
             verify(assignmentRepository).save(any(Assignment.class));
             assertThat(result.getDueDate()).isEqualTo(futureDate);
@@ -96,31 +108,19 @@ class AssignmentServiceTest {
     }
 
     @Test
-    void createAssignment_pastDueDate_throwsIllegalArgument() throws InvalidSessionException {
+    void createAssignment_pastDueDate_throwsIllegalArgument() {
+
         LocalDate pastDate = LocalDate.now().minusDays(1);
         CreateAssignmentRequest request = new CreateAssignmentRequest(mock(Subject.class), pastDate, "notes");
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
 
-            assertThatThrownBy(() -> assignmentService.createAssignment(sessionID, request))
+            assertThatThrownBy(() -> assignmentService.createAssignment(mockSession, request))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("past");
-        }
-    }
-
-    @Test
-    void createAssignment_invalidSession_throws() throws InvalidSessionException {
-        LocalDate futureDate = LocalDate.now().plusDays(1);
-        CreateAssignmentRequest request = new CreateAssignmentRequest(mock(Subject.class), futureDate, "notes");
-
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
-                    .thenThrow(new InvalidSessionException("Invalid session"));
-
-            assertThatThrownBy(() -> assignmentService.createAssignment(sessionID, request))
-                    .isInstanceOf(InvalidSessionException.class);
         }
     }
 
@@ -128,22 +128,25 @@ class AssignmentServiceTest {
 
     @Test
     void updateAssignment_validRequest_updatesAndReturns() throws Exception {
+
         when(mockUser.getUserUUID()).thenReturn(userUUID);
-        int assignmentId = 1;
-        Assignment assignment = mock(Assignment.class);
+        final int assignmentId = 1;
+        final Assignment assignment = mock(Assignment.class);
         when(assignment.getUserUUID()).thenReturn(userUUID);
 
         UpdateAssignmentRequest request = new UpdateAssignmentRequest(
                 mock(Subject.class), true, LocalDate.now().plusDays(3)
         );
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(assignmentRepository.findById(assignmentId))
                     .thenReturn(Optional.of(assignment));
 
-            Assignment result = assignmentService.updateAssignment(sessionID, request, assignmentId);
+            final Assignment result = assignmentService.updateAssignment(mockSession, request, assignmentId);
 
             verify(assignment).setSubject(request.subject());
             verify(assignment).setDueDate(request.dueDate());
@@ -154,102 +157,101 @@ class AssignmentServiceTest {
     }
 
     @Test
-    void updateAssignment_assignmentNotFound_throwsEntityNotFound() throws InvalidSessionException {
-        int assignmentId = 99;
-        UpdateAssignmentRequest request = new UpdateAssignmentRequest(
+    void updateAssignment_assignmentNotFound_throwsEntityNotFound() {
+
+        final int assignmentId = 99;
+        final UpdateAssignmentRequest request = new UpdateAssignmentRequest(
                 mock(Subject.class), true, LocalDate.now().plusDays(3)
         );
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(assignmentRepository.findById(assignmentId))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> assignmentService.updateAssignment(sessionID, request, assignmentId))
+            assertThatThrownBy(() -> assignmentService.updateAssignment(mockSession, request, assignmentId))
                     .isInstanceOf(EntityNotFoundException.class);
         }
     }
 
     @Test
-    void updateAssignment_userMismatch_throwsUnauthorized() throws InvalidSessionException {
+    void updateAssignment_userMismatch_throwsUnauthorized() {
+
         when(mockUser.getUserUUID()).thenReturn(userUUID);
-        int assignmentId = 1;
-        Assignment assignment = mock(Assignment.class);
+        final int assignmentId = 1;
+        final Assignment assignment = mock(Assignment.class);
         when(assignment.getUserUUID()).thenReturn(UUID.randomUUID()); // different UUID
 
-        UpdateAssignmentRequest request = new UpdateAssignmentRequest(
+        final UpdateAssignmentRequest request = new UpdateAssignmentRequest(
                 mock(Subject.class), true, LocalDate.now().plusDays(3)
         );
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(assignmentRepository.findById(assignmentId))
                     .thenReturn(Optional.of(assignment));
 
-            assertThatThrownBy(() -> assignmentService.updateAssignment(sessionID, request, assignmentId))
+            assertThatThrownBy(() -> assignmentService.updateAssignment(mockSession, request, assignmentId))
                     .isInstanceOf(UnauthorizedAccessException.class);
-        }
-    }
-
-    @Test
-    void updateAssignment_invalidSession_throws() throws InvalidSessionException {
-        UpdateAssignmentRequest request = new UpdateAssignmentRequest(
-                mock(Subject.class), true, LocalDate.now().plusDays(3)
-        );
-
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
-                    .thenThrow(new InvalidSessionException("Invalid session"));
-
-            assertThatThrownBy(() -> assignmentService.updateAssignment(sessionID, request, 1))
-                    .isInstanceOf(InvalidSessionException.class);
         }
     }
 
     // -- Delete Assignments -- //
 
     @Test
-    void deleteAssignment_validRequest_deletesSuccessfully() throws InvalidSessionException {
-        int assignmentId = 1;
-        Assignment assignment = mock(Assignment.class);
+    void deleteAssignment_validRequest_deletesSuccessfully() throws InvalidSessionException, UnauthorizedAccessException {
+        final int assignmentId = 1;
+        final Assignment assignment = mock(Assignment.class);
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        when(mockUser.getUserUUID()).thenReturn(userUUID);
+        when(assignment.getUserUUID()).thenReturn(userUUID);
+
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(assignmentRepository.findById(assignmentId))
                     .thenReturn(Optional.of(assignment));
 
-            assignmentService.deleteAssignment(sessionID, assignmentId);
+            assignmentService.deleteAssignment(mockSession, assignmentId);
 
             verify(assignmentRepository).delete(assignment);
         }
     }
 
     @Test
-    void deleteAssignment_assignmentNotFound_throwsEntityNotFound() throws InvalidSessionException {
-        int assignmentId = 99;
+    void deleteAssignment_assignmentNotFound_throwsEntityNotFound() {
+        final int assignmentId = 99;
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(assignmentRepository.findById(assignmentId))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> assignmentService.deleteAssignment(sessionID, assignmentId))
+            assertThatThrownBy(() -> assignmentService.deleteAssignment(mockSession, assignmentId))
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining(String.valueOf(assignmentId));
         }
     }
 
     @Test
-    void deleteAssignment_invalidSession_throws() throws InvalidSessionException {
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
-                    .thenThrow(new InvalidSessionException("Invalid session"));
+    void deleteAssignment_invalidSession_throws() {
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
 
-            assertThatThrownBy(() -> assignmentService.deleteAssignment(sessionID, 1))
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
+                    .thenThrow(InvalidSessionException.class);
+
+            assertThatThrownBy(() -> assignmentService.deleteAssignment(mockSession, 1))
                     .isInstanceOf(InvalidSessionException.class);
         }
     }

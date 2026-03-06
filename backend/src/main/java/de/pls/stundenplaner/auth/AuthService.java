@@ -29,17 +29,16 @@ public class AuthService {
      * Validates if the User with its given credentials is able to log in.
      *
      * @param loginRequest A DTO for the Login {@code request} part which holds the Username and Password.
-     * @return A DTO for the Login {@code response} part which returns the SessionID for the Frontend to handle.
      * @throws InvalidLoginException Thrown if the credentials from the request DTO are invalid.
      */
     public void checkLogin(
-            final @NotNull @NonNull LoginRequest loginRequest
+            final @NonNull LoginRequest loginRequest
     ) throws InvalidLoginException {
 
-        User user = userRepository.findByUsername(loginRequest.username())
+        final User user = userRepository.findByUsername(loginRequest.username())
                 .orElseThrow(InvalidLoginException::new);
 
-        String hashedInputPassword = PasswordHasher.sha256(loginRequest.password());
+        final String hashedInputPassword = PasswordHasher.sha256(loginRequest.password());
 
         if (!hashedInputPassword.equals(user.getPassword_hash())) {
             throw new InvalidLoginException();
@@ -69,15 +68,14 @@ public class AuthService {
 
         final String hashedPassword = PasswordHasher.sha256(registerRequest.password());
 
-        User user;
-        try {
-            user = new User(
+        if (username.isEmpty()) {
+            throw new EmptyUsernameException();
+        }
+
+        User user = new User(
                 username,
                 hashedPassword
-            );
-        } catch (EmptyUsernameException e) {
-            return;
-        }
+        );
 
         userRepository.save(user);
     }

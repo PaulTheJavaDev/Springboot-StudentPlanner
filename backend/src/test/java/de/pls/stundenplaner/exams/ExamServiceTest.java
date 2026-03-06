@@ -1,13 +1,16 @@
 package de.pls.stundenplaner.exams;
 
 import de.pls.stundenplaner.auth.User;
+import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.dto.request.exam.CreateExamRequest;
 import de.pls.stundenplaner.dto.request.exam.UpdateExamRequest;
 import de.pls.stundenplaner.subjects.Subject;
+import de.pls.stundenplaner.util.HttpStuff;
 import de.pls.stundenplaner.util.UserUtil;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,22 +34,25 @@ class ExamServiceTest {
     @Mock
     private ExamRepository examRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private ExamService examService;
 
-    private UUID sessionID;
+    private HttpSession mockSession;
     private UUID userUUID;
     private User mockUser;
 
-    private UpdateExamRequest request = new UpdateExamRequest(
+    private final UpdateExamRequest updateExamRequest = new UpdateExamRequest(
             Subject.ART, "notes", LocalDate.now().plusDays(3)
     );
 
     @BeforeEach
     void setUp() {
-        sessionID = UUID.randomUUID();
-        userUUID  = UUID.randomUUID();
+        mockSession = mock(HttpSession.class);
         mockUser  = mock(User.class);
+        userUUID  = UUID.randomUUID();
     }
 
     // -- Get Exams -- //
@@ -56,27 +62,29 @@ class ExamServiceTest {
         when(mockUser.getUserUUID()).thenReturn(userUUID);
         List<Exam> expected = List.of(mock(Exam.class));
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(examRepository.findExamsByUserUUID(userUUID))
                     .thenReturn(expected);
 
-            List<Exam> result = examService.getAllExams(sessionID);
+            List<Exam> result = examService.getAllExams(mockSession);
 
             assertThat(result).isEqualTo(expected);
         }
     }
 
     @Test
-    void getAllExams_invalidSession_throwsRuntimeException() throws InvalidSessionException {
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+    void getAllExams_invalidSession_throwsRuntimeException() {
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenThrow(new InvalidSessionException("Invalid session"));
 
-            assertThatThrownBy(() -> examService.getAllExams(sessionID))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasCauseInstanceOf(InvalidSessionException.class);
+            assertThatThrownBy(() -> examService.getAllExams(mockSession))
+                    .isInstanceOf(InvalidSessionException.class);
         }
     }
 
@@ -84,16 +92,18 @@ class ExamServiceTest {
 
     @Test
     void createExam_validRequest_createsAndReturns() throws InvalidSessionException {
+        
         when(mockUser.getUserUUID()).thenReturn(userUUID);
         LocalDate futureDate = LocalDate.now().plusDays(7);
         Subject subject = mock(Subject.class);
         CreateExamRequest request = new CreateExamRequest(subject, futureDate, "Some notes");
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
 
-            Exam result = examService.createExam(sessionID, request);
+            Exam result = examService.createExam(mockSession, request);
 
             verify(examRepository).save(any(Exam.class));
             assertThat(result.getDueDate()).isEqualTo(futureDate);
@@ -106,11 +116,12 @@ class ExamServiceTest {
         LocalDate pastDate = LocalDate.now().minusDays(1);
         CreateExamRequest request = new CreateExamRequest(mock(Subject.class), pastDate, "notes");
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
 
-            assertThatThrownBy(() -> examService.createExam(sessionID, request))
+            assertThatThrownBy(() -> examService.createExam(mockSession, request))
                     .isInstanceOf(DateTimeException.class)
                     .hasMessageContaining("past");
         }
@@ -121,11 +132,12 @@ class ExamServiceTest {
         LocalDate futureDate = LocalDate.now().plusDays(1);
         CreateExamRequest request = new CreateExamRequest(mock(Subject.class), futureDate, "notes");
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenThrow(new InvalidSessionException("Invalid session"));
 
-            assertThatThrownBy(() -> examService.createExam(sessionID, request))
+            assertThatThrownBy(() -> examService.createExam(mockSession, request))
                     .isInstanceOf(InvalidSessionException.class);
         }
     }
@@ -139,17 +151,19 @@ class ExamServiceTest {
         Exam exam = mock(Exam.class);
         when(exam.getUserUUID()).thenReturn(userUUID);
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(examRepository.findById(examId))
                     .thenReturn(Optional.of(exam));
 
-            Exam result = examService.updateExam(sessionID, request, examId);
+            Exam result = examService.updateExam(mockSession, updateExamRequest, examId);
 
-            verify(exam).setNotes(request.notes());
-            verify(exam).setSubject(request.subject());
-            verify(exam).setDueDate(request.dueDate());
+            verify(exam).setNotes(updateExamRequest.notes());
+            verify(exam).setSubject(updateExamRequest.subject());
+            verify(exam).setDueDate(updateExamRequest.dueDate());
             verify(exam).setUserUUID(userUUID);
             verify(examRepository).save(exam);
             assertThat(result).isEqualTo(exam);
@@ -157,16 +171,18 @@ class ExamServiceTest {
     }
 
     @Test
-    void updateExam_examNotFound_throwsEntityNotFound() throws InvalidSessionException {
+    void updateExam_examNotFound_throwsEntityNotFound() {
         int examId = 99;
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(examRepository.findById(examId))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> examService.updateExam(sessionID, request, examId))
+            assertThatThrownBy(() -> examService.updateExam(mockSession, updateExamRequest, examId))
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining(String.valueOf(examId));
         }
@@ -177,26 +193,29 @@ class ExamServiceTest {
         when(mockUser.getUserUUID()).thenReturn(userUUID);
         int examId = 1;
         Exam exam = mock(Exam.class);
-        when(exam.getUserUUID()).thenReturn(UUID.randomUUID()); // different UUID or a 1 in 9 Quintillion change that these two will bne the same lmao
+        when(exam.getUserUUID()).thenReturn(UUID.randomUUID()); // different UUID or a 1 in 9 Quintillion change that these two will be the same lmao
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(examRepository.findById(examId))
                     .thenReturn(Optional.of(exam));
 
-            assertThatThrownBy(() -> examService.updateExam(sessionID, request, examId))
+            assertThatThrownBy(() -> examService.updateExam(mockSession, updateExamRequest, examId))
                     .isInstanceOf(UnauthorizedAccessException.class);
         }
     }
 
     @Test
-    void updateExam_invalidSession_throws() throws InvalidSessionException {
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+    void updateExam_invalidSession_throws() {
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenThrow(new InvalidSessionException("Invalid session"));
 
-            assertThatThrownBy(() -> examService.updateExam(sessionID, request, 1))
+            assertThatThrownBy(() -> examService.updateExam(mockSession, updateExamRequest, 1))
                     .isInstanceOf(InvalidSessionException.class);
         }
     }
@@ -208,41 +227,50 @@ class ExamServiceTest {
         int examId = 1;
         Exam exam = mock(Exam.class);
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(examRepository.findById(examId))
                     .thenReturn(Optional.of(exam));
 
-            examService.deleteExam(sessionID, examId);
+            examService.deleteExam(mockSession, examId);
 
             verify(examRepository).delete(exam);
         }
     }
 
     @Test
-    void deleteExam_examNotFound_throwsEntityNotFound() throws InvalidSessionException {
+    void deleteExam_examNotFound_throwsEntityNotFound() {
         int examId = 99;
 
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
+
             when(examRepository.findById(examId))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> examService.deleteExam(sessionID, examId))
+            assertThatThrownBy(() -> examService.deleteExam(mockSession, examId))
                     .isInstanceOf(EntityNotFoundException.class);
         }
     }
 
     @Test
-    void deleteExam_invalidSession_throws() throws InvalidSessionException {
-        try (MockedStatic<UserUtil> util = mockStatic(UserUtil.class)) {
-            util.when(() -> UserUtil.checkUserExistenceBySessionID(sessionID))
+    void deleteExam_invalidSession_throws() {
+
+        try (MockedStatic<HttpStuff> util = mockStatic(HttpStuff.class)) {
+
+            util.when(() -> HttpStuff.getUserFromSession(userRepository, mockSession))
                     .thenThrow(new InvalidSessionException("Invalid session"));
 
-            assertThatThrownBy(() -> examService.deleteExam(sessionID, 1))
+            assertThatThrownBy(() -> examService.deleteExam(mockSession, 1))
                     .isInstanceOf(InvalidSessionException.class);
+
         }
+
     }
+
 }

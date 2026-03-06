@@ -75,7 +75,6 @@
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>26.0.2</version>
-            <scope>compile</scope>
         </dependency>
 
     </dependencies>
@@ -100,7 +99,7 @@
                 </configuration>
             </plugin>
 
-            <!-- SPRING BOOT JAR (WICHTIG!) -->
+            <!-- Spring Boot JAR -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

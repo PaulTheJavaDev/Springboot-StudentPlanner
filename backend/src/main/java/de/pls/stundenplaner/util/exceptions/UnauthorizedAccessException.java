@@ -20,7 +20,7 @@ public class UnauthorizedAccessException extends Exception {
      * Creates an {@link UnauthorizedAccessException} with a default error message.
      */
     public UnauthorizedAccessException() {
-        super("Not authorized to update this assignment");
+        super("User is not authorized to access this resource.");
     }
 
     /**

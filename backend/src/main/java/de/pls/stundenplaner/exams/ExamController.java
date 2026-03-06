@@ -5,12 +5,16 @@ import de.pls.stundenplaner.dto.request.exam.UpdateExamRequest;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import lombok.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
+
+import static de.pls.stundenplaner.util.HttpStuff.*;
 
 /**
  * Handles Web Requests for the Exams via {@link ExamService}
@@ -27,44 +31,48 @@ public class ExamController {
 
     @GetMapping
     public ResponseEntity<List<Exam>> getExams(
-            final @RequestHeader("SessionID") UUID sessionID
+            final @NonNull HttpServletRequest request
     ) throws InvalidSessionException {
 
-        List<Exam> exams = examService.getAllExams(sessionID);
+        final HttpSession session = getValidSession(request);
+        final List<Exam> exams = examService.getAllExams(session);
         return ResponseEntity.ok(exams);
 
     }
 
     @PostMapping
     public ResponseEntity<Exam> createExam(
-            final @RequestHeader("SessionID") UUID sessionID,
-            @RequestBody CreateExamRequest createExamRequest
+            final @NonNull HttpServletRequest request,
+            final @NonNull @RequestBody CreateExamRequest createExamRequest
     ) throws InvalidSessionException {
 
-        Exam exam = examService.createExam(sessionID, createExamRequest);
-        return new ResponseEntity<>(exam, HttpStatus.OK);
+        final HttpSession session = getValidSession(request);
+        final Exam exam = examService.createExam(session, createExamRequest);
+        return ResponseEntity.ok(exam);
 
     }
 
     @PutMapping("/{examId}")
     public ResponseEntity<Exam> updateExam(
-            final @RequestHeader("SessionID") UUID sessionID,
+            final @NonNull HttpServletRequest request,
             final @PathVariable int examId,
             @RequestBody UpdateExamRequest updateExamRequest
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
-        Exam exam = examService.updateExam(sessionID, updateExamRequest, examId);
+        final @NonNull HttpSession session = getValidSession(request);
+        final @NonNull Exam exam = examService.updateExam(session, updateExamRequest, examId);
         return new ResponseEntity<>(exam, HttpStatus.OK);
 
     }
 
     @DeleteMapping("/{examId}")
     public ResponseEntity<Void> deleteExam(
-            final @RequestHeader("SessionID") UUID sessionID,
+            final @NonNull HttpServletRequest request,
             final @PathVariable int examId
     ) throws InvalidSessionException, EntityNotFoundException {
 
-        examService.deleteExam(sessionID, examId);
+        final @NonNull HttpSession session = getValidSession(request);
+        examService.deleteExam(session, examId);
         return ResponseEntity.ok().build();
 
     }

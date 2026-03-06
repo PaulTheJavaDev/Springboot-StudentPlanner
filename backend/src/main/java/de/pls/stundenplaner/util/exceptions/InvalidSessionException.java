@@ -1,10 +1,9 @@
 package de.pls.stundenplaner.util.exceptions;
 
 /**
- * Thrown when a user request contains no session ID or an invalid session ID.
+ * Thrown when a user request contains no Session-ID or an invalid Session-ID.
  * <p>
- * This exception is only used when accessing endpoints
- * that require a valid authenticated session.
+ * Most Use-cases for this Exception to be thrown are in Classes which interact with Http-related Objects and some logic fails.
  * </p>
  *
  * Common reasons:
@@ -12,6 +11,8 @@ package de.pls.stundenplaner.util.exceptions;
  *     <li>Missing Session ID</li>
  *     <li>Invalid Session ID</li>
  * </ul>
+ *
+ * Most Use-cases for this Exception to be thrown are in Classes which interact with Http-related Objects.
  *
  */
 public class InvalidSessionException extends Exception {

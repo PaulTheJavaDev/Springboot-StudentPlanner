@@ -1,13 +1,16 @@
 package de.pls.stundenplaner.exams;
 
 import de.pls.stundenplaner.auth.User;
+import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.dto.request.exam.CreateExamRequest;
 import de.pls.stundenplaner.dto.request.exam.UpdateExamRequest;
 import de.pls.stundenplaner.subjects.Subject;
+import de.pls.stundenplaner.util.HttpStuff;
 import de.pls.stundenplaner.util.UserUtil;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static de.pls.stundenplaner.util.UserUtil.checkUserExistenceBySessionID;
+import static de.pls.stundenplaner.util.HttpStuff.*;
 
 /**
  * Business logic for the {@link Exam} entity.
@@ -27,8 +31,10 @@ import static de.pls.stundenplaner.util.UserUtil.checkUserExistenceBySessionID;
 public class ExamService {
 
     private final ExamRepository examRepository;
+    private final UserRepository userRepository;
 
-    public ExamService(ExamRepository examRepository) {
+    public ExamService(UserRepository userRepository, ExamRepository examRepository) {
+        this.userRepository = userRepository;
         this.examRepository = examRepository;
     }
 
@@ -37,20 +43,14 @@ public class ExamService {
      *
      * @param sessionID Used to determine the user by searching the session ID in the database.
      * @return A list of exams. Returns an empty list if none are found.
-     * @throws InvalidSessionException Thrown when the request contains no session ID or an invalid session ID.
      */
     public List<Exam> getAllExams(
-            @NotNull @NonNull UUID sessionID
-    ) {
+            final @NotNull @NonNull HttpSession session
+    ) throws InvalidSessionException {
 
-        User user;
-        try {
-            user = UserUtil.checkUserExistenceBySessionID(sessionID);
-        } catch (InvalidSessionException e) {
-            throw new RuntimeException(e);
-        }
-
+        User user = getUserFromSession(userRepository, session);
         return examRepository.findExamsByUserUUID(user.getUserUUID());
+
     }
 
     /**
@@ -62,11 +62,11 @@ public class ExamService {
      * @throws InvalidSessionException Thrown when the request contains no session ID or an invalid session ID.
      */
     public Exam createExam(
-            @NotNull @NonNull final UUID sessionID,
-            @NotNull @NonNull final CreateExamRequest createExamRequest
+            final @NotNull @NonNull HttpSession session,
+            final @NotNull @NonNull CreateExamRequest createExamRequest
     ) throws InvalidSessionException {
 
-        final User user = checkUserExistenceBySessionID(sessionID);
+        final User user = getUserFromSession(userRepository, session);
 
         final LocalDate today = LocalDate.now();
         if (createExamRequest.dueDate().isBefore(today)) {
@@ -102,12 +102,12 @@ public class ExamService {
      * @throws EntityNotFoundException Thrown if the exam does not exist.
      */
     public Exam updateExam(
-            @NotNull @NonNull final UUID sessionID,
-            @NotNull @NonNull final UpdateExamRequest request,
+            final @NotNull @NonNull HttpSession session,
+            final @NotNull @NonNull UpdateExamRequest request,
             final int examId
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
-        User user = checkUserExistenceBySessionID(sessionID);
+        User user = getUserFromSession(userRepository, session);
 
         Optional<Exam> examOptional = examRepository.findById(examId);
 
@@ -140,11 +140,11 @@ public class ExamService {
      * @throws EntityNotFoundException Thrown if the exam does not exist.
      */
     public void deleteExam(
-            @NotNull @NonNull final UUID sessionID,
+            final @NotNull @NonNull HttpSession session,
             final int examId
     ) throws InvalidSessionException, EntityNotFoundException {
 
-        checkUserExistenceBySessionID(sessionID);
+        getUserFromSession(userRepository, session); // Can either return a user or an Exception
         Exam examToDelete = examRepository.findById(examId).orElseThrow(EntityNotFoundException::new);
 
         examRepository.delete(examToDelete);

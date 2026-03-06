@@ -121,7 +121,7 @@ class TimeStampServiceTest {
     }
 
     @Test
-    void updateTimeStamp_notFound_throwsEntityNotFound() throws InvalidSessionException {
+    void updateTimeStamp_notFound_throwsEntityNotFound() {
         setupValidSession();
         when(timeStampRepository.findById(99)).thenReturn(Optional.empty());
         UpdateTimeStampRequest request = new UpdateTimeStampRequest("LESSON", "Physics");
@@ -148,7 +148,7 @@ class TimeStampServiceTest {
     }
 
     @Test
-    void deleteTimeStamp_notFound_throwsEntityNotFound() throws InvalidSessionException {
+    void deleteTimeStamp_notFound_throwsEntityNotFound() {
         setupValidSession();
         when(timeStampRepository.findById(99)).thenReturn(Optional.empty());
 

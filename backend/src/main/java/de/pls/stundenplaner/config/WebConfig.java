@@ -1,5 +1,6 @@
 package de.pls.stundenplaner.config;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -12,21 +13,9 @@ public class WebConfig {
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
-            public void addCorsMappings(CorsRegistry registry) {
+            public void addCorsMappings(@NotNull CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOriginPatterns(
-                                "http://localhost:3000",
-                                "http://localhost:3001",
-                                "http://localhost:3002",
-                                "http://localhost:3003",
-                                "http://localhost:3004",
-                                "http://localhost:3005",
-                                "http://localhost:3006",
-                                "http://localhost:3007",
-                                "http://localhost:3008",
-                                "http://localhost:3009",
-                                "http://localhost:3010"
-                        )
+                        .allowedOriginPatterns("http://localhost:[*]")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
