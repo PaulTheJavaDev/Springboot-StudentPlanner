@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,6 +63,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.checkLogin(request))
                 .isInstanceOf(InvalidLoginException.class);
+
     }
 
     @Test
@@ -106,17 +108,17 @@ class AuthServiceTest {
     }
 
     @Test
-    void registerUser_emptyUsername_returnsEarly() throws UserAlreadyExistsException, EmptyUsernameException {
-        RegisterRequest request = new RegisterRequest("", "password123");
+    void registerUser_emptyUsername_throwsEmptyUsernameException() {
+        String username = "";
+        RegisterRequest request = new RegisterRequest(username, "password123");
         String hashedPassword = "hashed_password";
 
         try (MockedStatic<PasswordHasher> hasher = mockStatic(PasswordHasher.class)) {
             hasher.when(() -> PasswordHasher.sha256("password123")).thenReturn(hashedPassword);
-            when(userRepository.findByUsername("")).thenReturn(Optional.empty());
+            when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
 
-            authService.registerUser(request);
+            assertThrows(EmptyUsernameException.class, () -> authService.registerUser(request));
 
-            // User constructor threw EmptyUsernameException → method returns early → save never called
             verify(userRepository, never()).save(any(User.class));
         }
     }

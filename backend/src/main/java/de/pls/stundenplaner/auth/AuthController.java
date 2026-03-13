@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.security.NoSuchAlgorithmException;
+
 @Controller
 @RequestMapping("/auth")
 public class AuthController {
@@ -46,14 +48,15 @@ public class AuthController {
 
             return ResponseEntity.ok().build();
         } catch (InvalidLoginException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("User does not have access to this feature.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User does not have access to this feature.");
+        } catch (NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("SHA-256 not available.");
         }
     }
 
     @PostMapping("/register")
     public ResponseEntity<String> register(
-            final @RequestBody @Valid RegisterRequest registerRequest
+            final @NonNull @RequestBody @Valid RegisterRequest registerRequest
     ) {
         try {
             authService.registerUser(registerRequest);
@@ -62,11 +65,15 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Username already exists.");
         } catch (EmptyUsernameException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Username cannot be empty.");
+        } catch (NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("SHA-256 not available.");
         }
     }
 
     @GetMapping("/check")
-    public ResponseEntity<Boolean> checkSession(HttpServletRequest request) {
+    public ResponseEntity<Boolean> checkSession(
+            final @NonNull HttpServletRequest request
+    ) {
 
         final HttpSession session = request.getSession(false);
 

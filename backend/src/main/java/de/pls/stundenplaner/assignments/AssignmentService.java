@@ -12,12 +12,13 @@ import jakarta.servlet.http.HttpSession;
 import lombok.NonNull;
 import org.springframework.stereotype.Service;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static de.pls.stundenplaner.util.HttpStuff.getUserFromSession;
+import static de.pls.stundenplaner.util.HttpSessionUtils.getUserFromSession;
 
 /**
  * Business logic for the {@link Assignment} Entity
@@ -40,7 +41,7 @@ public class AssignmentService {
      * @throws InvalidSessionException Thrown when a user request contains no session ID or an invalid session ID.
      */
     public List<Assignment> getAssignments(
-            final HttpSession session
+            final @NonNull HttpSession session
     ) throws InvalidSessionException {
 
         final User user = getUserFromSession(userRepository, session);
@@ -60,16 +61,16 @@ public class AssignmentService {
             final @NonNull CreateAssignmentRequest createAssignmentRequest
     ) throws InvalidSessionException {
 
-        User user = getUserFromSession(userRepository, session);
+        final User user = getUserFromSession(userRepository, session);
 
         if (createAssignmentRequest.dueDate().isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Date cannot be in the past!");
+            throw new DateTimeException("Date cannot be in the past!");
         }
 
-        Subject subject = createAssignmentRequest.subject();
-        LocalDate dueDate = createAssignmentRequest.dueDate();
-        String notes = createAssignmentRequest.notes();
-        UUID userUUID = user.getUserUUID();
+        final Subject subject = createAssignmentRequest.subject();
+        final LocalDate dueDate = createAssignmentRequest.dueDate();
+        final String notes = createAssignmentRequest.notes();
+        final UUID userUUID = user.getUserUUID();
 
         Assignment assignment = new Assignment(
                 subject,
@@ -102,7 +103,7 @@ public class AssignmentService {
         final Assignment assignment = assignmentRepository.findById(assignmentId).orElseThrow(EntityNotFoundException::new);
 
         if (!assignment.getUserUUID().equals(user.getUserUUID())) {
-            throw new UnauthorizedAccessException("User is not authorized to update this assignment");
+            throw new UnauthorizedAccessException("User is not authorized to update this assignment.");
         }
 
         assignment.setSubject(request.subject());

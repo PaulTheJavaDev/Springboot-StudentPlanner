@@ -17,7 +17,7 @@ public final class PasswordHasher {
      */
     public static String sha256(
             @NotNull @NonNull final String password
-    ) {
+    ) throws NoSuchAlgorithmException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
@@ -34,7 +34,7 @@ public final class PasswordHasher {
             return hexString.toString();
 
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 not available.", e);
+            throw new NoSuchAlgorithmException("SHA-256 not available.");
         }
     }
 }

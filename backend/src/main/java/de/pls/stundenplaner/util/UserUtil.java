@@ -34,7 +34,8 @@ public class UserUtil {
             final @NotNull @NonNull UUID sessionID
     ) throws InvalidSessionException {
 
-        return userRepository.findBySessionID(sessionID).orElseThrow(InvalidSessionException::new);
+        return userRepository.findBySessionID(sessionID)
+                .orElseThrow(InvalidSessionException::new);
 
     }
 

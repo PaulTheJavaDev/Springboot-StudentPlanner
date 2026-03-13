@@ -7,6 +7,7 @@ import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static de.pls.stundenplaner.util.HttpStuff.*;
+import static de.pls.stundenplaner.util.HttpSessionUtils.*;
 
 /**
  * Handles Web Requests for the Exams via {@link ExamService}
@@ -43,7 +44,7 @@ public class ExamController {
     @PostMapping
     public ResponseEntity<Exam> createExam(
             final @NonNull HttpServletRequest request,
-            final @NonNull @RequestBody CreateExamRequest createExamRequest
+            final @NonNull @RequestBody @Valid CreateExamRequest createExamRequest
     ) throws InvalidSessionException {
 
         final HttpSession session = getValidSession(request);
@@ -56,11 +57,11 @@ public class ExamController {
     public ResponseEntity<Exam> updateExam(
             final @NonNull HttpServletRequest request,
             final @PathVariable int examId,
-            @RequestBody UpdateExamRequest updateExamRequest
+            final @NonNull @RequestBody UpdateExamRequest updateExamRequest
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
-        final @NonNull HttpSession session = getValidSession(request);
-        final @NonNull Exam exam = examService.updateExam(session, updateExamRequest, examId);
+        final HttpSession session = getValidSession(request);
+        final Exam exam = examService.updateExam(session, updateExamRequest, examId);
         return new ResponseEntity<>(exam, HttpStatus.OK);
 
     }
@@ -71,7 +72,7 @@ public class ExamController {
             final @PathVariable int examId
     ) throws InvalidSessionException, EntityNotFoundException {
 
-        final @NonNull HttpSession session = getValidSession(request);
+        final HttpSession session = getValidSession(request);
         examService.deleteExam(session, examId);
         return ResponseEntity.ok().build();
 

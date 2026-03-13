@@ -10,4 +10,8 @@ public class UserAlreadyExistsException extends Exception {
         super("User '" + username + "' already exists.");
     }
 
+    public UserAlreadyExistsException() {
+        super("User already exists.");
+    }
+
 }

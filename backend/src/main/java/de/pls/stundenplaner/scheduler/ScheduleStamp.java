@@ -21,28 +21,26 @@ import lombok.Setter;
 @SuppressWarnings("all")
 @Entity
 @Getter @Setter @NoArgsConstructor
-public final class TimeStamp {
+public final class ScheduleStamp {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(nullable = false)
-    @NotNull
     private String type;
 
     @Column(nullable = false)
-    @NotNull
     private String text;
 
     private DayOfWeek dayOfWeek;
     private UUID userUUID;
 
-    public TimeStamp(
-            @NonNull final String blockType
+    public ScheduleStamp(
+            final @NonNull String blockType
     ) {
         this.type = blockType;
-        this.text = (blockType.equalsIgnoreCase("Lesson")) ? "Lesson" : "Break";
+        this.text = blockType.equalsIgnoreCase("Lesson") ? "Lesson" : "Break";
     }
 
 }

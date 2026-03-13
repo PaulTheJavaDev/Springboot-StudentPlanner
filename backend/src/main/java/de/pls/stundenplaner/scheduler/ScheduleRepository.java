@@ -5,8 +5,8 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TimeStampRepository extends JpaRepository<TimeStamp, Integer> {
+public interface ScheduleRepository extends JpaRepository<ScheduleStamp, Integer> {
 
-    List<TimeStamp> findByUserUUID(UUID userUUID);
+    List<ScheduleStamp> findByUserUUID(UUID userUUID);
 
 }

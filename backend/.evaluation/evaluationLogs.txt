@@ -1,0 +1,73 @@
+2026-03-13 08:38:42.749 - Notification - You are making progress on an achievement! You have already reached 33,33% of the next level of the 'The Tester' achievement!
+2026-03-13 08:38:42.798 - Notification - You might want to run your tests with coverage to see if you missed anything!
+2026-03-13 08:41:24.97 - Notification - You are making progress on an achievement! You have already reached 33,33% of the next level of the 'Assert and Tested' achievement!
+2026-03-13 08:41:25.166 - Notification - You are making progress on an achievement! You have already reached 66,67% of the next level of the 'Assert and Tested' achievement!
+2026-03-13 08:41:25.283 - Notification - Congratulations! You unlocked level 1 of the 'Assert and Tested' achievement!
+2026-03-13 08:41:25.908 - Notification - You are making progress on an achievement! You have already reached 25,00% of the next level of the 'Assert and Tested' achievement!
+2026-03-13 08:41:26.566 - Notification - You are making progress on an achievement! You have already reached 50,00% of the next level of the 'Assert and Tested' achievement!
+2026-03-13 08:41:27.831 - Notification - Congratulations! You unlocked level 1 of the 'Test Executor' achievement!
+2026-03-13 08:41:27.866 - Notification - You are making progress on an achievement! You have already reached 66,67% of the next level of the 'The Tester' achievement!
+2026-03-13 08:41:27.907 - Notification - You might want to run your tests with coverage to see if you missed anything!
+2026-03-13 08:41:27.931 - Notification - You are making progress on an achievement! You have already reached 33,33% of the next level of the 'Gotta Catch ’Em All' achievement!
+2026-03-13 08:45:28.256 - Notification - Congratulations! You unlocked level 1 of the 'Double check' achievement!
+2026-03-13 08:45:28.275 - Notification - You are making progress on an achievement! You have already reached 50,00% of the next level of the 'Safety First' achievement!
+2026-03-13 08:45:32.833 - Notification - You are making progress on an achievement! You have already reached 75,00% of the next level of the 'Assert and Tested' achievement!
+2026-03-13 08:45:33.456 - Notification - You are making progress on an achievement! You have already reached 75,00% of the next level of the 'Test Executor' achievement!
+2026-03-13 08:45:33.476 - Notification - Congratulations! You unlocked level 1 of the 'The Tester' achievement!
+2026-03-13 08:45:33.527 - Notification - You might want to run your tests with coverage to see if you missed anything!
+2026-03-13 08:45:59.609 - Notification - You might want to run your tests with coverage to see if you missed anything!
+2026-03-13 08:45:59.613 - Notification - You are making progress on an achievement! You have already reached 66,67% of the next level of the 'Gotta Catch ’Em All' achievement!
+2026-03-13 08:46:00.861 - Notification - You are making progress on an achievement! You have already reached 30,00% of the next level of the 'Check your methods' achievement!
+2026-03-13 08:46:01.158 - Notification - You are making progress on an achievement! You have already reached 30,00% of the next level of the 'Check your classes' achievement!
+2026-03-13 08:46:01.221 - Notification - You are making progress on an achievement! You have already reached 30,00% of the next level of the 'Check your branches' achievement!
+2026-03-13 08:46:01.347 - Notification - You are making progress on an achievement! You have already reached 53,00% of the next level of the 'Line-by-line' achievement!
+2026-03-13 08:46:01.379 - Notification - Congratulations! You unlocked level 1 of the 'Check your methods' achievement!
+2026-03-13 08:46:01.445 - Notification - Congratulations! You unlocked level 1 of the 'Check your branches' achievement!
+2026-03-13 08:49:16.61 - Notification - You are making progress on an achievement! You have already reached 90,00% of the next level of the 'Double check' achievement!
+2026-03-13 08:49:16.628 - Notification - You are making progress on an achievement! You have already reached 90,00% of the next level of the 'Safety First' achievement!
+2026-03-13 08:49:29.525 - Notification - Congratulations! You unlocked level 2 of the 'Double check' achievement!
+2026-03-13 08:49:29.557 - Notification - Congratulations! You unlocked level 1 of the 'Safety First' achievement!
+2026-03-13 08:49:35.743 - Notification - Congratulations! You unlocked level 2 of the 'Assert and Tested' achievement!
+2026-03-13 08:49:36.474 - Notification - Congratulations! You unlocked level 2 of the 'Test Executor' achievement!
+2026-03-13 08:49:36.523 - Notification - You might want to run your tests with coverage to see if you missed anything!
+2026-03-13 08:49:47.743 - Notification - You might want to run your tests with coverage to see if you missed anything!
+2026-03-13 08:49:47.747 - Notification - Congratulations! You unlocked level 1 of the 'Gotta Catch ’Em All' achievement!
+2026-03-13 08:49:49.452 - Notification - You are making progress on an achievement! You have already reached 50,00% of the next level of the 'Check your classes' achievement!
+2026-03-13 08:49:49.711 - Notification - Congratulations! You unlocked level 1 of the 'Line-by-line' achievement!
+2026-03-13 08:49:49.791 - Notification - You are making progress on an achievement! You have already reached 50,00% of the next level of the 'Check your branches' achievement!
+2026-03-13 08:50:36.901 - Notification - You are making progress on an achievement! You have already reached 40,00% of the next level of the 'Shine in new splendour' achievement!
+2026-03-13 08:50:58.042 - Notification - You are making progress on an achievement! You have already reached 80,00% of the next level of the 'Check your classes' achievement!
+2026-03-13 08:50:58.36 - Notification - You are making progress on an achievement! You have already reached 29,00% of the next level of the 'Check your methods' achievement!
+2026-03-13 08:50:58.408 - Notification - Congratulations! You unlocked level 1 of the 'Check your classes' achievement!
+2026-03-13 08:50:58.472 - Notification - You are making progress on an achievement! You have already reached 78,00% of the next level of the 'Check your branches' achievement!
+2026-03-13 08:57:59.305 - Notification - You are making progress on an achievement! You have already reached 60,00% of the next level of the 'Shine in new splendour' achievement!
+2026-03-13 08:57:59.324 - Notification - You are making progress on an achievement! You have already reached 80,00% of the next level of the 'Shine in new splendour' achievement!
+2026-03-13 08:57:59.345 - Notification - Congratulations! You unlocked level 1 of the 'Shine in new splendour' achievement!
+2026-03-13 08:58:04.73 - Notification - You are making progress on an achievement! You have already reached 50,00% of the next level of the 'Gotta Catch ’Em All' achievement!
+2026-03-13 08:58:06.445 - Notification - Congratulations! You unlocked level 2 of the 'Check your branches' achievement!
+2026-03-13 09:01:17.301 - Notification - You are making progress on an achievement! You have already reached 29,00% of the next level of the 'Double check' achievement!
+2026-03-13 09:01:24.127 - Notification - You are making progress on an achievement! You have already reached 25,00% of the next level of the 'Assert and Tested' achievement!
+2026-03-13 09:01:26.695 - Notification - You are making progress on an achievement! You have already reached 33,20% of the next level of the 'Test Executor' achievement!
+2026-03-13 09:02:39.506 - Notification - You are making progress on an achievement! You have already reached 80,00% of the next level of the 'Gotta Catch ’Em All' achievement!
+2026-03-13 09:02:41.662 - Notification - You are making progress on an achievement! You have already reached 51,00% of the next level of the 'Check your methods' achievement!
+2026-03-13 09:02:41.86 - Notification - You are making progress on an achievement! You have already reached 26,40% of the next level of the 'Line-by-line' achievement!
+2026-03-13 09:02:42.219 - Notification - You are making progress on an achievement! You have already reached 25,00% of the next level of the 'Check your classes' achievement!
+2026-03-13 09:02:43.025 - Notification - You are making progress on an achievement! You have already reached 76,00% of the next level of the 'Check your methods' achievement!
+2026-03-13 09:02:43.577 - Notification - Congratulations! You unlocked level 2 of the 'Check your methods' achievement!
+2026-03-13 09:02:44.316 - Notification - You are making progress on an achievement! You have already reached 53,30% of the next level of the 'Line-by-line' achievement!
+2026-03-13 09:03:17.544 - Notification - You are making progress on an achievement! You have already reached 50,00% of the next level of the 'Assert and Tested' achievement!
+2026-03-13 09:03:19.105 - Notification - You are making progress on an achievement! You have already reached 50,40% of the next level of the 'Test Executor' achievement!
+2026-03-13 09:04:27.033 - Notification - You are making progress on an achievement! You have already reached 26,00% of the next level of the 'Shine in new splendour' achievement!
+2026-03-13 09:06:46.351 - Notification - You are making progress on an achievement! You have already reached 75,00% of the next level of the 'Assert and Tested' achievement!
+2026-03-13 09:06:58.907 - Notification - You are making progress on an achievement! You have already reached 87,00% of the next level of the 'Test Executor' achievement!
+2026-03-13 09:07:05.206 - Notification - Congratulations! You unlocked level 3 of the 'Assert and Tested' achievement!
+2026-03-13 09:07:08.771 - Notification - Congratulations! You unlocked level 3 of the 'Test Executor' achievement!
+2026-03-13 09:07:08.826 - Notification - You are making progress on an achievement! You have already reached 30,00% of the next level of the 'The Tester - Advanced' achievement!
+2026-03-13 12:38:38.555 - Notification - Congratulations! You unlocked level 2 of the 'Gotta Catch ’Em All' achievement!
+2026-03-13 12:38:39.154 - Notification - You are making progress on an achievement! You have already reached 50,00% of the next level of the 'Check your classes' achievement!
+2026-03-13 12:38:40.001 - Notification - You are making progress on an achievement! You have already reached 25,00% of the next level of the 'Check your branches' achievement!
+2026-03-13 12:38:41.028 - Notification - You are making progress on an achievement! You have already reached 76,10% of the next level of the 'Line-by-line' achievement!
+2026-03-13 14:00:38.418 - Notification - You are making progress on an achievement! You have already reached 75,00% of the next level of the 'Check your classes' achievement!
+2026-03-13 14:00:40.606 - Notification - Congratulations! You unlocked level 2 of the 'Line-by-line' achievement!
+2026-03-13 14:00:40.638 - Notification - You are making progress on an achievement! You have already reached 25,00% of the next level of the 'Check your methods' achievement!
+2026-03-13 14:00:41.916 - Notification - Congratulations! You unlocked level 2 of the 'Check your classes' achievement!

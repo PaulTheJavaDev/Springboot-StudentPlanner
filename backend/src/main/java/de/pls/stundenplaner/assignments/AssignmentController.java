@@ -2,7 +2,7 @@ package de.pls.stundenplaner.assignments;
 
 import de.pls.stundenplaner.dto.request.assignment.CreateAssignmentRequest;
 import de.pls.stundenplaner.dto.request.assignment.UpdateAssignmentRequest;
-import de.pls.stundenplaner.util.HttpStuff;
+import de.pls.stundenplaner.util.HttpSessionUtils;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,8 +33,8 @@ public class AssignmentController {
             final @NonNull HttpServletRequest request
     ) throws InvalidSessionException {
 
-        HttpSession session = HttpStuff.getValidSession(request);
-        List<Assignment> assignmentList = service.getAssignments(session);
+        final HttpSession session = HttpSessionUtils.getValidSession(request);
+        final List<Assignment> assignmentList = service.getAssignments(session);
         return ResponseEntity.ok(assignmentList);
 
     }
@@ -45,7 +45,7 @@ public class AssignmentController {
             final @NonNull @RequestBody @Valid CreateAssignmentRequest createRequest
     ) throws InvalidSessionException {
 
-        HttpSession session = HttpStuff.getValidSession(request);
+        final HttpSession session = HttpSessionUtils.getValidSession(request);
         final Assignment assignment = service.createAssignment(session, createRequest);
         return ResponseEntity.ok(assignment);
 
@@ -58,7 +58,7 @@ public class AssignmentController {
             final @NonNull @RequestBody @Valid UpdateAssignmentRequest updateRequest
     ) throws UnauthorizedAccessException, InvalidSessionException {
 
-        HttpSession session = HttpStuff.getValidSession(request);
+        final HttpSession session = HttpSessionUtils.getValidSession(request);
         return new ResponseEntity<>(service.updateAssignment(session, updateRequest, assignmentId), HttpStatus.OK);
 
     }
@@ -69,16 +69,14 @@ public class AssignmentController {
             final @PathVariable int assignmentId
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
-        HttpSession session = HttpStuff.getValidSession(request);
+        final HttpSession session = HttpSessionUtils.getValidSession(request);
 
         try {
-
             service.deleteAssignment(session, assignmentId);
-
         } catch (UnauthorizedAccessException e) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (InvalidSessionException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         service.deleteAssignment(session, assignmentId);

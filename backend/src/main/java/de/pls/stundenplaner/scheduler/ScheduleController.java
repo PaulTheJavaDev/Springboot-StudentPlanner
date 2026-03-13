@@ -13,47 +13,47 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static de.pls.stundenplaner.util.HttpStuff.getValidSession;
+import static de.pls.stundenplaner.util.HttpSessionUtils.getValidSession;
 
 /**
- * Handles Web Requests for the Scheduler via {@link TimeStampService}
+ * Handles Web Requests for the Scheduler via {@link ScheduleService}
  */
 @RestController
 @RequestMapping("/schedule/me")
-public class TimeStampController {
+public class ScheduleController {
 
-    private final TimeStampService timeStampService;
+    private final ScheduleService timeStampService;
 
-    public TimeStampController(TimeStampService timeStampService) {
+    public ScheduleController(ScheduleService timeStampService) {
         this.timeStampService = timeStampService;
     }
 
     @GetMapping
-    public ResponseEntity<List<TimeStamp>> getSchedule(
+    public ResponseEntity<List<ScheduleStamp>> getSchedule(
             final @NonNull HttpServletRequest request
     ) throws InvalidSessionException {
 
         final HttpSession session = getValidSession(request);
-        final List<TimeStamp> scheduleDays = timeStampService.getAllTimeStamps(session);
+        final List<ScheduleStamp> scheduleDays = timeStampService.getMySchedule(session);
         return ResponseEntity.ok(scheduleDays);
 
     }
 
     @PostMapping("/{dayOfWeek}")
-    public ResponseEntity<TimeStamp> createTimeStamp(
+    public ResponseEntity<ScheduleStamp> createTimeStamp(
             final @NonNull HttpServletRequest request,
             final @PathVariable DayOfWeek dayOfWeek,
             final @NonNull @RequestBody @Valid CreateTimeStampRequest createTimeStampRequest
     ) throws InvalidSessionException {
 
         final HttpSession session = getValidSession(request);
-        final TimeStamp timeStamp = timeStampService.createTimeStamp(session, dayOfWeek, createTimeStampRequest);
+        final ScheduleStamp timeStamp = timeStampService.createTimeStamp(session, dayOfWeek, createTimeStampRequest);
         return ResponseEntity.ok(timeStamp);
 
     }
 
     @PutMapping("/{dayOfWeek}/{timeStampId}")
-    public ResponseEntity<TimeStamp> updateTimeStamp(
+    public ResponseEntity<ScheduleStamp> updateTimeStamp(
             final @NonNull HttpServletRequest request,
             final @NonNull @PathVariable DayOfWeek dayOfWeek,
             final @PathVariable int timeStampId,
@@ -61,7 +61,7 @@ public class TimeStampController {
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
         final HttpSession session = getValidSession(request);
-        final TimeStamp timeStamp = timeStampService.updateTimeStamp(session, dayOfWeek, updateTimeStampRequest, timeStampId);
+        final ScheduleStamp timeStamp = timeStampService.updateTimeStamp(session, dayOfWeek, updateTimeStampRequest, timeStampId);
         return ResponseEntity.ok(timeStamp);
 
     }

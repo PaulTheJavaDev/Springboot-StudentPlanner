@@ -5,28 +5,34 @@ import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class HttpStuff {
+public class HttpSessionUtils {
 
-    public static HttpSession getValidSession(HttpServletRequest request) throws InvalidSessionException {
-        HttpSession session = request.getSession(false);
+    public static HttpSession getValidSession(
+            final @NonNull HttpServletRequest request
+    ) throws InvalidSessionException {
+
+        final HttpSession session = request.getSession(false);
+
         if (session == null || !Boolean.TRUE.equals(session.getAttribute("AUTHENTICATED"))) {
             throw new InvalidSessionException();
         }
+
         return session;
     }
 
     public static User getUserFromSession(
-            final @NotNull UserRepository userRepository,
-            final @NotNull HttpSession session
+            final @NonNull UserRepository userRepository,
+            final @NonNull HttpSession session
     ) throws InvalidSessionException {
 
-        Object rawUUID = session.getAttribute("USER_UUID");
+        final Object rawUUID = session.getAttribute("USER_UUID");
         if (!(rawUUID instanceof UUID userUUID)) {
-            throw new InvalidSessionException("SessionID is not type of: UUID.");
+            throw new IllegalArgumentException("SessionID is not type of: UUID.");
         }
 
         return userRepository.findByUserUUID(userUUID)

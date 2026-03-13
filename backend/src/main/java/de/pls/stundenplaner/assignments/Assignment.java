@@ -27,17 +27,14 @@ public final class Assignment {
     private Subject subject;
 
     @Column(nullable = false, updatable = false)
-    @NotNull
     private UUID userUUID;
 
     @Column(nullable = false)
-    @NotNull
     private LocalDate dueDate;
 
     private boolean completed;
 
     @Column(nullable = false)
-    @NotNull
     private String notes;
 
     public Assignment(

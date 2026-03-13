@@ -1,5 +1,6 @@
 package de.pls.stundenplaner.auth;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +34,7 @@ public class AuthService {
      */
     public void checkLogin(
             final @NonNull LoginRequest loginRequest
-    ) throws InvalidLoginException {
+    ) throws InvalidLoginException, NoSuchAlgorithmException {
 
         final User user = userRepository.findByUsername(loginRequest.username())
                 .orElseThrow(InvalidLoginException::new);
@@ -58,7 +59,7 @@ public class AuthService {
      */
     public void registerUser(
             final @NotNull @NonNull RegisterRequest registerRequest
-    ) throws UserAlreadyExistsException, EmptyUsernameException {
+    ) throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
 
         final String username = registerRequest.username();
 

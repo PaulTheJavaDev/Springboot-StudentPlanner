@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Plugins ### Doesn't work fml
+.evaluation
+.evaluation/evaluationLogs.txt
+.evaluation/TestReport.csv

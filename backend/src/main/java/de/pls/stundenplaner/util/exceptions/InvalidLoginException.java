@@ -23,13 +23,4 @@ public class InvalidLoginException extends Exception {
         super("Invalid username or password.");
     }
 
-    /**
-     * Creates an {@link InvalidLoginException} with a custom error message.
-     *
-     * @param message detailed error description
-     */
-    public InvalidLoginException(String message) {
-        super(message);
-    }
-
 }

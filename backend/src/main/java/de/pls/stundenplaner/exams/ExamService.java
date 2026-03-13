@@ -5,8 +5,6 @@ import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.dto.request.exam.CreateExamRequest;
 import de.pls.stundenplaner.dto.request.exam.UpdateExamRequest;
 import de.pls.stundenplaner.subjects.Subject;
-import de.pls.stundenplaner.util.HttpStuff;
-import de.pls.stundenplaner.util.UserUtil;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,8 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static de.pls.stundenplaner.util.UserUtil.checkUserExistenceBySessionID;
-import static de.pls.stundenplaner.util.HttpStuff.*;
+import static de.pls.stundenplaner.util.HttpSessionUtils.*;
 
 /**
  * Business logic for the {@link Exam} entity.
@@ -41,7 +38,7 @@ public class ExamService {
     /**
      * Retrieves all exams for a user.
      *
-     * @param sessionID Used to determine the user by searching the session ID in the database.
+     * @param session Used to determine the user by searching the session ID in the database.
      * @return A list of exams. Returns an empty list if none are found.
      */
     public List<Exam> getAllExams(
@@ -56,7 +53,7 @@ public class ExamService {
     /**
      * Creates an exam for a specified user.
      *
-     * @param sessionID Used to determine the user by searching the session ID in the database.
+     * @param session Used to determine the user by searching the session ID in the database.
      * @param createExamRequest A DTO used to create an exam. Contains only the required information.
      * @return The created exam.
      * @throws InvalidSessionException Thrown when the request contains no session ID or an invalid session ID.
@@ -93,7 +90,7 @@ public class ExamService {
     /**
      * Updates an existing exam.
      *
-     * @param sessionID Used to determine the user by searching the session ID in the database.
+     * @param session Used to determine the user by searching the session ID in the database.
      * @param request A DTO used to update an exam. Contains only the required information.
      * @param examId Used to find the associated exam in the database.
      * @return The updated exam.
@@ -134,7 +131,7 @@ public class ExamService {
     /**
      * Deletes an existing exam.
      *
-     * @param sessionID Used to determine the user by searching the session ID in the database.
+     * @param session Used to determine the user by searching the session ID in the database.
      * @param examId Used to find the associated exam in the database.
      * @throws InvalidSessionException Thrown when the session ID is invalid.
      * @throws EntityNotFoundException Thrown if the exam does not exist.
