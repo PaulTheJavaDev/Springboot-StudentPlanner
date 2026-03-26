@@ -31,7 +31,7 @@ public class UserUtil {
      * @throws InvalidSessionException Thrown if the SessionID is invalid
      */
     public static User checkUserExistenceBySessionID(
-            final @NotNull @NonNull UUID sessionID
+            final @NonNull UUID sessionID
     ) throws InvalidSessionException {
 
         return userRepository.findBySessionID(sessionID)

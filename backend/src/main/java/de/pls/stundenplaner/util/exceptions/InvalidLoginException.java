@@ -23,4 +23,8 @@ public class InvalidLoginException extends Exception {
         super("Invalid username or password.");
     }
 
+    public InvalidLoginException(final String message) {
+        super(message);
+    }
+
 }

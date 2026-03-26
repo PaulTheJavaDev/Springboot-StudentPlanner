@@ -2,13 +2,9 @@ package de.pls.stundenplaner.scheduler;
 
 import java.util.UUID;
 
-import org.jetbrains.annotations.NotNull;
+import de.pls.stundenplaner.scheduler.type.ScheduleStampType;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -27,20 +23,18 @@ public final class ScheduleStamp {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(nullable = false)
-    private String type;
-
-    @Column(nullable = false)
-    private String text;
+    @Enumerated(EnumType.STRING)
+    private ScheduleStampType type;
 
     private DayOfWeek dayOfWeek;
     private UUID userUUID;
 
     public ScheduleStamp(
-            final @NonNull String blockType
+            final @NonNull ScheduleStampType type,
+            final @NonNull DayOfWeek dayOfWeek
     ) {
-        this.type = blockType;
-        this.text = blockType.equalsIgnoreCase("Lesson") ? "Lesson" : "Break";
+        this.dayOfWeek = dayOfWeek;
+        this.type = type;
     }
 
 }

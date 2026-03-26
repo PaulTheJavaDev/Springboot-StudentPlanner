@@ -1,10 +1,10 @@
-export const HOST = "http://localhost:8080";
+export const LOCALHOST = "http://localhost:8080";
 
-export const ASSIGNMENTS_URL = HOST + "/assignments/me";
-export const EXAMS_URL = HOST + "/exams/me";
+export const ASSIGNMENTS_URL = LOCALHOST + "/assignments/me";
+export const EXAMS_URL = LOCALHOST + "/exams/me";
 
-const AUTH_URL = HOST + "/auth";
+export const AUTH_URL = LOCALHOST + "/auth";
 export const LOGIN_URL = AUTH_URL + "/login";
 export const REGISTER_URL = AUTH_URL + "/register";
 
-export const HOME_URL = HOST + "/schedule/me";
+export const SCHEDULE_URL = LOCALHOST + "/schedule/me";

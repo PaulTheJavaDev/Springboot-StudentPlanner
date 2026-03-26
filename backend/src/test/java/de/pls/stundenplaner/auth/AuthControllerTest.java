@@ -1,26 +1,34 @@
 package de.pls.stundenplaner.auth;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import de.pls.stundenplaner.dto.request.auth.LoginRequest;
 import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
+import de.pls.stundenplaner.dto.response.auth.LoginResponse;
+import de.pls.stundenplaner.dto.response.auth.RegisterResponse;
 import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
 import de.pls.stundenplaner.util.exceptions.UserAlreadyExistsException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -43,6 +51,7 @@ class AuthControllerTest {
     private User mockUser;
     private UUID userUUID;
 
+    @SuppressWarnings("unused")
     @BeforeEach
     void setUp() {
         userUUID = UUID.randomUUID();
@@ -58,7 +67,7 @@ class AuthControllerTest {
         when(request.getSession(true)).thenReturn(session);
         when(mockUser.getUserUUID()).thenReturn(userUUID);
 
-        ResponseEntity<String> response = controller.login(loginRequest, request);
+        ResponseEntity<LoginResponse> response = controller.login(loginRequest, request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(session).setAttribute("AUTHENTICATED", true);
@@ -66,11 +75,11 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_invalidCredentials_returnsUnauthorized() throws InvalidLoginException {
+    void login_invalidCredentials_returnsUnauthorized() throws InvalidLoginException, NoSuchAlgorithmException {
         LoginRequest loginRequest = new LoginRequest("user", "wrongPassword");
         doThrow(new InvalidLoginException()).when(authService).checkLogin(loginRequest);
 
-        ResponseEntity<String> response = controller.login(loginRequest, request);
+        ResponseEntity<LoginResponse> response = controller.login(loginRequest, request);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verify(request, never()).getSession(anyBoolean());
@@ -81,7 +90,7 @@ class AuthControllerTest {
         LoginRequest loginRequest = new LoginRequest("ghost", "pass");
         when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
-        ResponseEntity<String> response = controller.login(loginRequest, request);
+        ResponseEntity<LoginResponse> response = controller.login(loginRequest, request);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verify(request, never()).getSession(anyBoolean());
@@ -90,31 +99,31 @@ class AuthControllerTest {
     // -- Registers -- //
 
     @Test
-    void register_newUser_returnsOk() throws UserAlreadyExistsException, EmptyUsernameException {
+    void register_newUser_returnsOk() throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
         RegisterRequest registerRequest = new RegisterRequest("newUser", "pass");
 
-        ResponseEntity<String> response = controller.register(registerRequest);
+        ResponseEntity<RegisterResponse> response = controller.register(registerRequest);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(authService).registerUser(registerRequest);
     }
 
     @Test
-    void register_existingUser_returnsConflict() throws UserAlreadyExistsException, EmptyUsernameException {
+    void register_existingUser_returnsConflict() throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
         RegisterRequest registerRequest = new RegisterRequest("existingUser", "pass");
         doThrow(new UserAlreadyExistsException()).when(authService).registerUser(registerRequest);
 
-        ResponseEntity<String> response = controller.register(registerRequest);
+        ResponseEntity<RegisterResponse> response = controller.register(registerRequest);
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
     }
 
     @Test
-    void register_emptyUsername_returnsUnauthorized() throws UserAlreadyExistsException, EmptyUsernameException {
+    void register_emptyUsername_returnsUnauthorized() throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
         RegisterRequest registerRequest = new RegisterRequest("", "pass");
         doThrow(new EmptyUsernameException()).when(authService).registerUser(registerRequest);
 
-        ResponseEntity<String> response = controller.register(registerRequest);
+        ResponseEntity<RegisterResponse> response = controller.register(registerRequest);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
     }

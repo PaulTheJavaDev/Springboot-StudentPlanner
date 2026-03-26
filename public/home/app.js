@@ -1,52 +1,18 @@
-import { HOME_URL, HOST } from "/modules/Config.js";
-import { validateSessionAuth } from "/modules/Security.js";
+import { SCHEDULE_URL, LOCALHOST } from "../modules/Config.js";
+import { validateSessionAuth } from "../modules/Security.js";
+import "../modules/Requests.js";
+import {
+    createScheduleStamp,
+    deleteScheduleStamp,
+    getSubjects,
+    logoutAndRedirect,
+    requestScheduler,
+    updateScheduleStamp
+} from "../modules/Requests.js";
 
-const elements = {
-    feedbackElement: document.getElementById("responseLabel"),
-    schoolworkButton: document.getElementById("schoolworkButton"),
-};
-
-const errorMessages = {
-    emptyFields: "Please fill the input fields.",
-    defaultError: "Something went wrong"
-};
-
-function showResponse(message, duration = 1500) {
-    if (!elements.feedbackElement) return;
-    elements.feedbackElement.textContent = message;
-    setTimeout(() => elements.feedbackElement.textContent = "", duration);
-}
-
-async function apiRequest(method, url, data) {
-    try {
-        const response = await fetch(url, {
-            method,
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: data ? JSON.stringify(data) : undefined
-        });
-
-        if (!response.ok) {
-            showResponse(errorMessages.defaultError);
-            return null;
-        }
-
-        return method === "DELETE" ? response.ok : await response.json();
-    } catch {
-        showResponse(errorMessages.defaultError);
-        return null;
-    }
-}
-
-const apiGet = (url = HOME_URL) => apiRequest("GET", url);
-const apiPost = (url, data) => apiRequest("POST", url, data);
-const apiPut = (url, data) => apiRequest("PUT", url, data);
-const apiDelete = (url) => apiRequest("DELETE", url);
-
-async function getSubjects() {
-    return apiRequest("GET", `${HOST}/subjects`);
+const types = {
+    LESSON: "LESSON",
+    BREAK: "BREAK",
 }
 
 function createMenu(options, button) {
@@ -67,7 +33,6 @@ function createMenu(options, button) {
 
     button.onclick = (event) => {
         event.stopPropagation();
-
         const rect = button.getBoundingClientRect();
         menu.style.top = `${rect.bottom + 6}px`;
         menu.style.left = `${rect.left}px`;
@@ -84,9 +49,8 @@ function createMenu(options, button) {
     return menu;
 }
 
-/* ---------------- TIMESTAMP ---------------- */
-
 function createTimeStampElement(dayOfWeek, data) {
+
     const div = document.createElement("div");
     div.className = data.type;
 
@@ -100,38 +64,8 @@ function createTimeStampElement(dayOfWeek, data) {
     div.appendChild(editButton);
 
     const options = [];
-
     if (data.type === "lesson") {
-        options.push({
-            label: "Edit",
-            action: async () => {
-                const subjects = await getSubjects();
-                if (!subjects) return;
-
-                const select = document.createElement("select");
-                subjects.forEach(name => {
-                    const option = document.createElement("option");
-                    option.value = option.textContent = name;
-                    option.selected = name === span.textContent;
-                    select.appendChild(option);
-                });
-
-                span.replaceWith(select);
-                select.focus();
-
-                const save = async () => {
-                    await apiPut(`${HOME_URL}/${dayOfWeek}/${data.id}`, {
-                        type: data.type,
-                        text: select.value
-                    });
-                    span.textContent = select.value;
-                    select.replaceWith(span);
-                };
-
-                select.onchange = save;
-                select.onblur = save;
-            }
-        });
+        applyMenuEntries(options, span, dayOfWeek, data);
     }
 
     const menu = createMenu(options, editButton);
@@ -141,7 +75,7 @@ function createTimeStampElement(dayOfWeek, data) {
     deleteButton.onclick = async () => {
         div.remove();
         menu.remove();
-        await apiDelete(`${HOME_URL}/${dayOfWeek}/${data.id}`);
+        await deleteScheduleStamp(`${SCHEDULE_URL}/${dayOfWeek}/${data.id}`)
     };
 
     menu.appendChild(deleteButton);
@@ -149,45 +83,86 @@ function createTimeStampElement(dayOfWeek, data) {
     return div;
 }
 
+function applyMenuEntries(options, span, dayOfWeek, data) {
+    options.push({
+        label: "Edit",
+        action: async () => {
+
+            const subjects = await getSubjects();
+            if (!subjects) {
+                return;
+            }
+
+            const select = document.createElement("select");
+            subjects.forEach(name => {
+                const option = document.createElement("option");
+                option.value = option.textContent = name;
+                option.selected = name === span.textContent;
+                select.appendChild(option);
+            });
+
+            span.replaceWith(select);
+            select.focus();
+
+            const save = async () => {
+                await updateScheduleStamp(dayOfWeek, data.type)
+
+                span.textContent = select.value;
+                select.replaceWith(span);
+            };
+
+            select.onchange = save;
+            select.onblur = save;
+        }
+    });
+}
+
 async function loadSchedule() {
-    const timeStamps = await apiGet();
-    if (!timeStamps) return;
 
-    // Group flat TimeStamp list by dayOfWeek
-    const grouped = timeStamps.reduce((acc, ts) => {
-        if (!acc[ts.dayOfWeek]) acc[ts.dayOfWeek] = [];
-        acc[ts.dayOfWeek].push(ts);
-        return acc;
-    }, {});
+    const timeStamps = await requestScheduler();
+    console.log("Loaded schedule timestamps:", timeStamps);
 
-    Object.entries(grouped).forEach(([dayOfWeek, stamps]) => {
+    if (!timeStamps) {
+        console.log("Failed to load schedule.");
+        return;
+    }
+
+    Object.entries(timeStamps).forEach(([dayOfWeek, scheduleStamps]) => {
+
         const container = document.getElementById(dayOfWeek);
-        if (!container) return;
+        if (!container) {
+            return;
+        }
 
         container.querySelectorAll(".lesson, .break").forEach(e => e.remove());
 
-        stamps
-            .sort((a, b) => a.id - b.id)
-            .forEach(ts => container.insertBefore(
-                createTimeStampElement(dayOfWeek, ts),
-                container.querySelector(".addLesson")
-            ));
+        scheduleStamps
+            .sort((stampOne, stampTwo) => stampOne.id - stampTwo.id)
+            .forEach(scheduleStamp => {
+
+                const entriesContainer = container.querySelector(".entriesContainer");
+                entriesContainer.appendChild(createTimeStampElement(dayOfWeek, scheduleStamp));
+
+            }
+        );
     });
 }
 
 async function addItem(dayOfWeek, type) {
+
     const container = document.getElementById(dayOfWeek);
-    if (!container) return;
+    if (!container) {
+        return;
+    }
 
-    const timestamp = await apiPost(`${HOME_URL}/${dayOfWeek}`, {
-        type,
-        text: type === "lesson" ? "Lesson" : "Break"
-    });
+    const scheduleStamp = await createScheduleStamp(type, dayOfWeek);
 
-    if (!timestamp) return;
+    if (!scheduleStamp) {
+        return;
+    }
 
-    const element = createTimeStampElement(dayOfWeek, timestamp);
-    container.insertBefore(element, container.querySelector(".addLesson"));
+    const element = createTimeStampElement(dayOfWeek, scheduleStamp);
+    container.querySelector(".entriesContainer").appendChild(element);
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -198,15 +173,18 @@ window.addEventListener("DOMContentLoaded", async () => {
     };
 
     document.querySelectorAll(".addLesson")
-        .forEach(button => button.onclick = element => addItem(element.target.closest(".hoursContainer").id, "lesson"));
+        .forEach(button => button.onclick = e =>
+            addItem(e.target.closest(".hoursContainer").id, types.LESSON)
+        );
 
     document.querySelectorAll(".addBreak")
-        .forEach(button => button.onclick = element => addItem(element.target.closest(".hoursContainer").id, "break"));
+        .forEach(button => button.onclick = element =>
+            addItem(element.target.closest(".hoursContainer").id, types.BREAK)
+        );
 
     document.getElementById("logoutButton").onclick = async () => {
-        await fetch(`${HOST}/auth/logout`, { method: "POST", credentials: "include" });
-        location.href = "/login/index.html";
+        await logoutAndRedirect();
     };
 
-    loadSchedule();
+    await loadSchedule();
 });

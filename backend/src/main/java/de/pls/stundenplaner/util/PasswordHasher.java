@@ -16,13 +16,13 @@ public final class PasswordHasher {
      * @return The encoded Password.
      */
     public static String sha256(
-            @NotNull @NonNull final String password
+            final @NonNull String password
     ) throws NoSuchAlgorithmException {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
 
-            StringBuilder hexString = new StringBuilder();
+            final StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
                 if (hex.length() == 1) {

@@ -2,13 +2,12 @@ package de.pls.stundenplaner.scheduler;
 
 import de.pls.stundenplaner.dto.request.scheduler.CreateTimeStampRequest;
 import de.pls.stundenplaner.dto.request.scheduler.UpdateTimeStampRequest;
+import de.pls.stundenplaner.scheduler.type.ScheduleStampType;
 import de.pls.stundenplaner.util.HttpSessionUtils;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
-import lombok.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,14 +17,13 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ScheduleControllerTest {
@@ -43,10 +41,14 @@ public class ScheduleControllerTest {
     private ScheduleController controller;
 
     private ScheduleStamp testSchedule;
+    private CreateTimeStampRequest testCreateRequest;
+    private UpdateTimeStampRequest testUpdateRequest;
 
     @BeforeEach
     void setUp() {
         testSchedule = new ScheduleStamp();
+        testCreateRequest = new CreateTimeStampRequest(ScheduleStampType.LESSON);
+        testUpdateRequest = new UpdateTimeStampRequest(ScheduleStampType.LESSON);
     }
 
     // -- GET -- //
@@ -72,18 +74,14 @@ public class ScheduleControllerTest {
     @Test
     void createSchedule_returnsOk() throws InvalidSessionException {
 
-        final ScheduleStamp testSchedule = new ScheduleStamp("lesson");
-        final CreateTimeStampRequest createTimeStampRequest = new CreateTimeStampRequest(
-                "Lesson",
-                "Lesson"
-        );
+        final ScheduleStamp testSchedule = new ScheduleStamp(ScheduleStampType.LESSON, DayOfWeek.MONDAY);
 
         try (MockedStatic<HttpSessionUtils> httpSessionUtilsMockedStatic = mockStatic(HttpSessionUtils.class)) {
 
             httpSessionUtilsMockedStatic.when(() -> HttpSessionUtils.getValidSession(request)).thenReturn(session);
-            when(service.createTimeStamp(session, DayOfWeek.MONDAY, createTimeStampRequest)).thenReturn(testSchedule);
+            when(service.createTimeStamp(session, DayOfWeek.MONDAY, testCreateRequest)).thenReturn(testSchedule);
 
-            ResponseEntity<ScheduleStamp> response = controller.createTimeStamp(request, DayOfWeek.MONDAY, createTimeStampRequest);
+            ResponseEntity<ScheduleStamp> response = controller.createTimeStamp(request, DayOfWeek.MONDAY, testCreateRequest);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertEquals(testSchedule, response.getBody());
@@ -97,17 +95,12 @@ public class ScheduleControllerTest {
     @Test
     void updateSchedule_returnsOk() throws InvalidSessionException, UnauthorizedAccessException {
 
-        UpdateTimeStampRequest updateTimeStampRequest = new UpdateTimeStampRequest(
-                "Lesson",
-                "Lesson"
-        );
-
         try (MockedStatic<HttpSessionUtils> httpSessionUtilsMockedStatic = mockStatic(HttpSessionUtils.class)) {
 
             httpSessionUtilsMockedStatic.when(() -> HttpSessionUtils.getValidSession(request)).thenReturn(session);
-            when(service.updateTimeStamp(session, DayOfWeek.MONDAY, updateTimeStampRequest, 1)).thenReturn(testSchedule);
+            when(service.updateTimeStamp(session, DayOfWeek.MONDAY, testUpdateRequest, 1)).thenReturn(testSchedule);
 
-            ResponseEntity<ScheduleStamp> response = controller.updateTimeStamp(request, DayOfWeek.MONDAY, 1, updateTimeStampRequest);
+            ResponseEntity<ScheduleStamp> response = controller.updateTimeStamp(request, DayOfWeek.MONDAY, 1, testUpdateRequest);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertEquals(testSchedule, response.getBody());

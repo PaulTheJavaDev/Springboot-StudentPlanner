@@ -3,6 +3,9 @@ package de.pls.stundenplaner.auth;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
+import de.pls.stundenplaner.dto.response.auth.LoginResponse;
+import de.pls.stundenplaner.dto.response.auth.RegisterResponse;
+import jakarta.transaction.Transactional;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +35,8 @@ public class AuthService {
      * @param loginRequest A DTO for the Login {@code request} part which holds the Username and Password.
      * @throws InvalidLoginException Thrown if the credentials from the request DTO are invalid.
      */
-    public void checkLogin(
+    @Transactional
+    public LoginResponse checkLogin(
             final @NonNull LoginRequest loginRequest
     ) throws InvalidLoginException, NoSuchAlgorithmException {
 
@@ -49,6 +53,8 @@ public class AuthService {
         user.setSessionID(sessionID);
         userRepository.save(user);
 
+        return new  LoginResponse(sessionID);
+
     }
 
     /**
@@ -57,7 +63,8 @@ public class AuthService {
      * @param registerRequest A DTO for the Login {@code request} part which holds the Username and Password.
      * @throws UserAlreadyExistsException Thrown when the username from the credentials already exists.
      */
-    public void registerUser(
+    @Transactional
+    public RegisterResponse registerUser(
             final @NotNull @NonNull RegisterRequest registerRequest
     ) throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
 
@@ -73,11 +80,15 @@ public class AuthService {
             throw new EmptyUsernameException();
         }
 
+        final UUID sessionID = UUID.randomUUID();
+
         User user = new User(
                 username,
                 hashedPassword
         );
-
+        user.setSessionID(sessionID);
         userRepository.save(user);
+
+        return new RegisterResponse(sessionID);
     }
 }

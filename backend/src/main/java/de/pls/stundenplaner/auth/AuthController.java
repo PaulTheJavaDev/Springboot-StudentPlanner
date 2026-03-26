@@ -1,23 +1,19 @@
 package de.pls.stundenplaner.auth;
 
-import de.pls.stundenplaner.dto.request.auth.LoginRequest;
-import de.pls.stundenplaner.dto.request.auth.RegisterRequest;
-import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
-import de.pls.stundenplaner.util.exceptions.InvalidLoginException;
-import de.pls.stundenplaner.util.exceptions.UserAlreadyExistsException;
+import de.pls.stundenplaner.dto.request.auth.*;
+import de.pls.stundenplaner.dto.response.auth.LoginResponse;
+import de.pls.stundenplaner.dto.response.auth.RegisterResponse;
+import de.pls.stundenplaner.util.exceptions.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.NonNull;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/auth")
@@ -32,12 +28,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(
+    public ResponseEntity<LoginResponse> login(
             final @NonNull @RequestBody @Valid LoginRequest loginRequest,
             final @NonNull HttpServletRequest request
     ) {
         try {
-            authService.checkLogin(loginRequest);
+            final LoginResponse loginResponse = authService.checkLogin(loginRequest);
 
             final User user = userRepository.findByUsername(loginRequest.username())
                     .orElseThrow(InvalidLoginException::new);
@@ -46,27 +42,24 @@ public class AuthController {
             session.setAttribute("AUTHENTICATED", true);
             session.setAttribute("USER_UUID", user.getUserUUID());
 
-            return ResponseEntity.ok().build();
-        } catch (InvalidLoginException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User does not have access to this feature.");
-        } catch (NoSuchAlgorithmException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("SHA-256 not available.");
+            return new ResponseEntity<>(loginResponse, HttpStatus.OK);
+
+        } catch (InvalidLoginException | NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(
+    public ResponseEntity<RegisterResponse> register(
             final @NonNull @RequestBody @Valid RegisterRequest registerRequest
     ) {
         try {
-            authService.registerUser(registerRequest);
-            return ResponseEntity.ok("User registered");
+            RegisterResponse registerResponse = authService.registerUser(registerRequest);
+            return new ResponseEntity<>(registerResponse, HttpStatus.OK);
         } catch (UserAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Username already exists.");
-        } catch (EmptyUsernameException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Username cannot be empty.");
-        } catch (NoSuchAlgorithmException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("SHA-256 not available.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (EmptyUsernameException | NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
 

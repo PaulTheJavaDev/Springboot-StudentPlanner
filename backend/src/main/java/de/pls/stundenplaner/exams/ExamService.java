@@ -2,8 +2,11 @@ package de.pls.stundenplaner.exams;
 
 import de.pls.stundenplaner.auth.User;
 import de.pls.stundenplaner.auth.UserRepository;
+import de.pls.stundenplaner.dto.model.ExamDTO;
 import de.pls.stundenplaner.dto.request.exam.CreateExamRequest;
 import de.pls.stundenplaner.dto.request.exam.UpdateExamRequest;
+import de.pls.stundenplaner.dto.response.exam.CreateExamResponse;
+import de.pls.stundenplaner.dto.response.exam.GetAllExamsResponse;
 import de.pls.stundenplaner.subjects.Subject;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
@@ -41,12 +44,17 @@ public class ExamService {
      * @param session Used to determine the user by searching the session ID in the database.
      * @return A list of exams. Returns an empty list if none are found.
      */
-    public List<Exam> getAllExams(
-            final @NotNull @NonNull HttpSession session
+    public GetAllExamsResponse getAllExams(
+            final @NonNull HttpSession session
     ) throws InvalidSessionException {
 
-        User user = getUserFromSession(userRepository, session);
-        return examRepository.findExamsByUserUUID(user.getUserUUID());
+        final User user = getUserFromSession(userRepository, session);
+
+        List<ExamDTO> exams = examRepository.findExamsByUserUUID(user.getUserUUID()).stream()
+                .map(exam -> new ExamDTO(exam.getSubject(), exam.getNotes(), exam.getDueDate()))
+                .toList();
+
+        return new  GetAllExamsResponse(exams);
 
     }
 
@@ -56,16 +64,16 @@ public class ExamService {
      * @param session Used to determine the user by searching the session ID in the database.
      * @param createExamRequest A DTO used to create an exam. Contains only the required information.
      * @return The created exam.
-     * @throws InvalidSessionException Thrown when the request contains no session ID or an invalid session ID.
      */
-    public Exam createExam(
-            final @NotNull @NonNull HttpSession session,
-            final @NotNull @NonNull CreateExamRequest createExamRequest
+    public CreateExamResponse createExam(
+            final @NonNull HttpSession session,
+            final @NonNull CreateExamRequest createExamRequest
     ) throws InvalidSessionException {
 
         final User user = getUserFromSession(userRepository, session);
 
         final LocalDate today = LocalDate.now();
+
         if (createExamRequest.dueDate().isBefore(today)) {
             throw new DateTimeException("Date cannot be in the past.");
         }
@@ -84,7 +92,13 @@ public class ExamService {
 
         examRepository.save(exam);
 
-        return exam;
+        final ExamDTO examDTO = new ExamDTO(
+                exam.getSubject(),
+                exam.getNotes(),
+                exam.getDueDate()
+        );
+
+        return new CreateExamResponse(examDTO);
     }
 
     /**
@@ -99,20 +113,20 @@ public class ExamService {
      * @throws EntityNotFoundException Thrown if the exam does not exist.
      */
     public Exam updateExam(
-            final @NotNull @NonNull HttpSession session,
-            final @NotNull @NonNull UpdateExamRequest request,
+            final @NonNull HttpSession session,
+            final @NonNull UpdateExamRequest request,
             final int examId
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
-        User user = getUserFromSession(userRepository, session);
+        final User user = getUserFromSession(userRepository, session);
 
-        Optional<Exam> examOptional = examRepository.findById(examId);
+        final Optional<Exam> examOptional = examRepository.findById(examId);
 
         if (examOptional.isEmpty()) {
             throw new EntityNotFoundException("Exam with ID " + examId + " was not found.");
         }
 
-        Exam exam = examOptional.get();
+        final Exam exam = examOptional.get();
 
         if (!exam.getUserUUID().equals(user.getUserUUID())) {
             throw new UnauthorizedAccessException("User is not authorized to update this exam.");
@@ -137,13 +151,19 @@ public class ExamService {
      * @throws EntityNotFoundException Thrown if the exam does not exist.
      */
     public void deleteExam(
-            final @NotNull @NonNull HttpSession session,
+            final @NonNull HttpSession session,
             final int examId
     ) throws InvalidSessionException, EntityNotFoundException {
 
-        getUserFromSession(userRepository, session); // Can either return a user or an Exception
-        Exam examToDelete = examRepository.findById(examId).orElseThrow(EntityNotFoundException::new);
+        getUserFromSession(userRepository, session);
 
-        examRepository.delete(examToDelete);
+        final Optional<Exam> examOptional = examRepository.findById(examId);
+        if (examOptional.isEmpty()) {
+            throw new EntityNotFoundException("Exam with ID " + examId + " was not found.");
+        }
+
+        final Exam exam = examOptional.get();
+
+        examRepository.delete(exam);
     }
 }

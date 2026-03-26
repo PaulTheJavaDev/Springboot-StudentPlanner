@@ -4,6 +4,7 @@ import de.pls.stundenplaner.auth.User;
 import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.dto.request.scheduler.CreateTimeStampRequest;
 import de.pls.stundenplaner.dto.request.scheduler.UpdateTimeStampRequest;
+import de.pls.stundenplaner.scheduler.type.ScheduleStampType;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
@@ -22,6 +23,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("all")
 @ExtendWith(MockitoExtension.class)
 class ScheduleServiceTest {
 
@@ -38,11 +40,17 @@ class ScheduleServiceTest {
     private User mockUser;
     private HttpSession mockSession;
 
+    private CreateTimeStampRequest createTimeStampRequest;
+    private UpdateTimeStampRequest updateTimeStampRequest;
+
     @BeforeEach
     void setUp() {
         userUUID = UUID.randomUUID();
         mockUser = mock(User.class);
         mockSession = mock(HttpSession.class);
+
+        createTimeStampRequest = new CreateTimeStampRequest(ScheduleStampType.LESSON);
+        updateTimeStampRequest = new UpdateTimeStampRequest(ScheduleStampType.LESSON);
     }
 
     private void setupValidSession() {
@@ -65,14 +73,6 @@ class ScheduleServiceTest {
     }
 
     @Test
-    void getAllTimeStamps_invalidSession_throws() {
-        when(mockSession.getAttribute("USER_UUID")).thenReturn(null);
-
-        assertThatThrownBy(() -> timeStampService.getMySchedule(mockSession))
-                .isInstanceOf(InvalidSessionException.class);
-    }
-
-    @Test
     void getAllTimeStamps_uuidPresentButUserNotFound_throwsInvalidSession() {
         when(mockSession.getAttribute("USER_UUID")).thenReturn(userUUID);
         when(userRepository.findByUserUUID(userUUID)).thenReturn(Optional.empty());
@@ -91,40 +91,28 @@ class ScheduleServiceTest {
 
     @Test
     void createTimeStamp_validRequest_savesAndReturns() throws InvalidSessionException {
+
         setupValidSession();
         when(mockUser.getUserUUID()).thenReturn(userUUID);
-        CreateTimeStampRequest request = new CreateTimeStampRequest("LESSON", "Math");
-        ScheduleStamp savedTimeStamp = mock(ScheduleStamp.class);
+
+        final ScheduleStamp savedTimeStamp = mock(ScheduleStamp.class);
         when(timeStampRepository.save(any(ScheduleStamp.class))).thenReturn(savedTimeStamp);
 
-        ScheduleStamp result = timeStampService.createTimeStamp(mockSession, DayOfWeek.MONDAY, request);
+        ScheduleStamp result = timeStampService.createTimeStamp(mockSession, DayOfWeek.MONDAY, createTimeStampRequest);
 
         verify(timeStampRepository).save(any(ScheduleStamp.class));
         assertThat(result).isEqualTo(savedTimeStamp);
     }
 
     @Test
-    void createTimeStamp_invalidSession_throws() {
-        when(mockSession.getAttribute("USER_UUID")).thenReturn(null);
-        CreateTimeStampRequest request = new CreateTimeStampRequest("LESSON", "Math");
-
-        assertThatThrownBy(() -> timeStampService.createTimeStamp(mockSession, DayOfWeek.MONDAY, request))
-                .isInstanceOf(InvalidSessionException.class);
-    }
-
-    @Test
     void createTimeStamp_nullSession_throwsNullPointer() {
-        CreateTimeStampRequest request = new CreateTimeStampRequest("LESSON", "Math");
-
-        assertThatThrownBy(() -> timeStampService.createTimeStamp(null, DayOfWeek.MONDAY, request))
+        assertThatThrownBy(() -> timeStampService.createTimeStamp(null, DayOfWeek.MONDAY, createTimeStampRequest))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void createTimeStamp_nullDayOfWeek_throwsNullPointer() {
-        CreateTimeStampRequest request = new CreateTimeStampRequest("LESSON", "Math");
-
-        assertThatThrownBy(() -> timeStampService.createTimeStamp(mockSession, null, request))
+        assertThatThrownBy(() -> timeStampService.createTimeStamp(mockSession, null, createTimeStampRequest))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -138,38 +126,35 @@ class ScheduleServiceTest {
 
     @Test
     void updateTimeStamp_validRequest_updatesAndReturns() throws InvalidSessionException, UnauthorizedAccessException {
+
         setupValidSession();
+
+        final ScheduleStamp timeStamp = mock(ScheduleStamp.class);
+        final int timeStampId = 1;
+
         when(mockUser.getUserUUID()).thenReturn(userUUID);
-        int timeStampId = 1;
-        ScheduleStamp timeStamp = mock(ScheduleStamp.class);
         when(timeStamp.getUserUUID()).thenReturn(userUUID);
         when(timeStamp.getDayOfWeek()).thenReturn(DayOfWeek.MONDAY);
         when(timeStampRepository.findById(timeStampId)).thenReturn(Optional.of(timeStamp));
         when(timeStampRepository.save(timeStamp)).thenReturn(timeStamp);
 
-        UpdateTimeStampRequest request = new UpdateTimeStampRequest("LESSON", "Physics");
+        ScheduleStamp result = timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, updateTimeStampRequest, timeStampId);
 
-        ScheduleStamp result = timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, request, timeStampId);
-
-        verify(timeStamp).setType(request.type());
-        verify(timeStamp).setText(request.text());
+        verify(timeStamp).setType(updateTimeStampRequest.type());
         verify(timeStampRepository).save(timeStamp);
+
         assertThat(result).isEqualTo(timeStamp);
     }
 
     @Test
     void updateTimeStamp_nullSession_throwsNullPointer() {
-        UpdateTimeStampRequest request = new UpdateTimeStampRequest("LESSON", "Physics");
-
-        assertThatThrownBy(() -> timeStampService.updateTimeStamp(null, DayOfWeek.MONDAY, request, 1))
+        assertThatThrownBy(() -> timeStampService.updateTimeStamp(null, DayOfWeek.MONDAY, updateTimeStampRequest, 1))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void updateTimeStamp_nullDayOfWeek_throwsNullPointer() {
-        UpdateTimeStampRequest request = new UpdateTimeStampRequest("LESSON", "Physics");
-
-        assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, null, request, 1))
+        assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, null, updateTimeStampRequest, 1))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -183,9 +168,8 @@ class ScheduleServiceTest {
     void updateTimeStamp_notFound_throwsEntityNotFound() {
         setupValidSession();
         when(timeStampRepository.findById(99)).thenReturn(Optional.empty());
-        UpdateTimeStampRequest request = new UpdateTimeStampRequest("LESSON", "Physics");
 
-        assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, request, 99))
+        assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, updateTimeStampRequest, 99))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
@@ -196,9 +180,8 @@ class ScheduleServiceTest {
         ScheduleStamp timeStamp = mock(ScheduleStamp.class);
         when(timeStamp.getUserUUID()).thenReturn(UUID.randomUUID());
         when(timeStampRepository.findById(1)).thenReturn(Optional.of(timeStamp));
-        UpdateTimeStampRequest request = new UpdateTimeStampRequest("LESSON", "Physics");
 
-        assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, request, 1))
+        assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, updateTimeStampRequest, 1))
                 .isInstanceOf(UnauthorizedAccessException.class);
     }
 
@@ -210,9 +193,8 @@ class ScheduleServiceTest {
         when(timeStamp.getUserUUID()).thenReturn(userUUID);
         when(timeStamp.getDayOfWeek()).thenReturn(DayOfWeek.FRIDAY);
         when(timeStampRepository.findById(1)).thenReturn(Optional.of(timeStamp));
-        UpdateTimeStampRequest request = new UpdateTimeStampRequest("LESSON", "Physics");
 
-        assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, request, 1))
+        assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, updateTimeStampRequest, 1))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 

@@ -33,4 +33,9 @@ public enum Subject {
                 .toList();
     }
 
+    @Deprecated(forRemoval = true)
+    public static List<Subject> getSubjects() {
+        return Arrays.asList(Subject.values());
+    }
+
 }

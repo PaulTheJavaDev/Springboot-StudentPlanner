@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -52,6 +53,8 @@ class AuthServiceTest {
 
             verify(mockUser).setSessionID(any());
             verify(userRepository).save(mockUser);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -83,7 +86,7 @@ class AuthServiceTest {
     // -- Register User -- //
 
     @Test
-    void registerUser_validRequest_savesUser() throws UserAlreadyExistsException, EmptyUsernameException {
+    void registerUser_validRequest_savesUser() throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
         RegisterRequest request = new RegisterRequest("newuser", "password123");
         String hashedPassword = "hashed_password";
 

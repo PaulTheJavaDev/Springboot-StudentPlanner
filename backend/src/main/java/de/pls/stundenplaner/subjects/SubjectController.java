@@ -15,7 +15,7 @@ public class SubjectController {
 
     /**
      * Gets all possible Subjects
-     * @return A List of Subjects
+     * @return A List of Subjects as Strings, since its easier for the Frontend to work with Strings.
      */
     @GetMapping
     public List<String> getAllSubjects() {

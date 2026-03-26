@@ -1,8 +1,8 @@
-import { HOST } from "../modules/Config.js";
+import { AUTH_URL } from "../modules/Config.js";
 
 export async function getSession() {
     try {
-        const result = await fetch(HOST + "/auth/check", {
+        const result = await fetch(AUTH_URL + "/check", {
             method: "GET",
             credentials: "include"
         });
@@ -10,8 +10,6 @@ export async function getSession() {
         if (!result.ok) {
             return null;
         }
-
-        console.log("Session check result:", result);
 
         const data = await result.json();
         return data ? true : null;

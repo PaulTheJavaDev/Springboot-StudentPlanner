@@ -2,6 +2,8 @@ package de.pls.stundenplaner.exams;
 
 import de.pls.stundenplaner.dto.request.exam.CreateExamRequest;
 import de.pls.stundenplaner.dto.request.exam.UpdateExamRequest;
+import de.pls.stundenplaner.dto.response.exam.CreateExamResponse;
+import de.pls.stundenplaner.dto.response.exam.GetAllExamsResponse;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
@@ -31,24 +33,24 @@ public class ExamController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Exam>> getExams(
+    public ResponseEntity<GetAllExamsResponse> getExams(
             final @NonNull HttpServletRequest request
     ) throws InvalidSessionException {
 
         final HttpSession session = getValidSession(request);
-        final List<Exam> exams = examService.getAllExams(session);
+        final GetAllExamsResponse exams = examService.getAllExams(session);
         return ResponseEntity.ok(exams);
 
     }
 
     @PostMapping
-    public ResponseEntity<Exam> createExam(
+    public ResponseEntity<CreateExamResponse> createExam(
             final @NonNull HttpServletRequest request,
             final @NonNull @RequestBody @Valid CreateExamRequest createExamRequest
     ) throws InvalidSessionException {
 
         final HttpSession session = getValidSession(request);
-        final Exam exam = examService.createExam(session, createExamRequest);
+        final CreateExamResponse exam = examService.createExam(session, createExamRequest);
         return ResponseEntity.ok(exam);
 
     }
@@ -57,7 +59,7 @@ public class ExamController {
     public ResponseEntity<Exam> updateExam(
             final @NonNull HttpServletRequest request,
             final @PathVariable int examId,
-            final @NonNull @RequestBody UpdateExamRequest updateExamRequest
+            final @NonNull @RequestBody @Valid UpdateExamRequest updateExamRequest
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
         final HttpSession session = getValidSession(request);

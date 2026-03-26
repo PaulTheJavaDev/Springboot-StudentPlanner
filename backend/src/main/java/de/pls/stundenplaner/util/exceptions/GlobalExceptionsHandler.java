@@ -27,11 +27,6 @@ public class GlobalExceptionsHandler {
     }
 
     @ExceptionHandler(UnauthorizedAccessException.class)
-    public ResponseEntity<Void> handleUnauthorized() {
-        return ResponseEntity.status(FORBIDDEN_STATUS_CODE).build();
-    }
-
-    @ExceptionHandler(UnauthorizedAccessException.class)
     public ResponseEntity<Void> handleUnauthorizedAccess() {
         return ResponseEntity.status(FORBIDDEN_STATUS_CODE).build();
     }

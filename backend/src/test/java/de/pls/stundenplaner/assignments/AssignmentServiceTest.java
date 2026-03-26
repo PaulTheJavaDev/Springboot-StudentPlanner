@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -119,7 +120,7 @@ class AssignmentServiceTest {
                     .thenReturn(mockUser);
 
             assertThatThrownBy(() -> assignmentService.createAssignment(mockSession, request))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(DateTimeException.class)
                     .hasMessageContaining("past");
         }
     }

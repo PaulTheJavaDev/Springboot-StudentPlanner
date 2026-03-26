@@ -1,8 +1,9 @@
 package de.pls.stundenplaner.dto.request.scheduler;
 
+import de.pls.stundenplaner.scheduler.type.ScheduleStampType;
+
 public record CreateTimeStampRequest(
-        String type,
-        String text
+        ScheduleStampType type
 ) {
 
 }

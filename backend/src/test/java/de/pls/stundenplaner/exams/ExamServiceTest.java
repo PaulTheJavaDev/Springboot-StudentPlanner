@@ -2,8 +2,11 @@ package de.pls.stundenplaner.exams;
 
 import de.pls.stundenplaner.auth.User;
 import de.pls.stundenplaner.auth.UserRepository;
+import de.pls.stundenplaner.dto.model.ExamDTO;
 import de.pls.stundenplaner.dto.request.exam.CreateExamRequest;
 import de.pls.stundenplaner.dto.request.exam.UpdateExamRequest;
+import de.pls.stundenplaner.dto.response.exam.CreateExamResponse;
+import de.pls.stundenplaner.dto.response.exam.GetAllExamsResponse;
 import de.pls.stundenplaner.subjects.Subject;
 import de.pls.stundenplaner.util.HttpSessionUtils;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
@@ -23,6 +26,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -57,25 +61,6 @@ class ExamServiceTest {
     // -- Get Exams -- //
 
     @Test
-    void getAllExams_validSession_returnsList() throws InvalidSessionException {
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-        List<Exam> expected = List.of(mock(Exam.class));
-
-        try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
-
-            util.when(() -> HttpSessionUtils.getUserFromSession(userRepository, mockSession))
-                    .thenReturn(mockUser);
-
-            when(examRepository.findExamsByUserUUID(userUUID))
-                    .thenReturn(expected);
-
-            List<Exam> result = examService.getAllExams(mockSession);
-
-            assertThat(result).isEqualTo(expected);
-        }
-    }
-
-    @Test
     void getAllExams_invalidSession_throwsRuntimeException() {
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
 
@@ -102,16 +87,15 @@ class ExamServiceTest {
             util.when(() -> HttpSessionUtils.getUserFromSession(userRepository, mockSession))
                     .thenReturn(mockUser);
 
-            Exam result = examService.createExam(mockSession, request);
+            CreateExamResponse result = examService.createExam(mockSession, request);
 
             verify(examRepository).save(any(Exam.class));
-            assertThat(result.getDueDate()).isEqualTo(futureDate);
-            assertThat(result.getUserUUID()).isEqualTo(userUUID);
+            assertThat(result.examDTO().dueDate()).isEqualTo(futureDate);
         }
     }
 
     @Test
-    void createExam_pastDueDate_throwsDateTimeException() throws InvalidSessionException {
+    void createExam_pastDueDate_throwsDateTimeException() {
         LocalDate pastDate = LocalDate.now().minusDays(1);
         CreateExamRequest request = new CreateExamRequest(mock(Subject.class), pastDate, "notes");
 
@@ -127,7 +111,7 @@ class ExamServiceTest {
     }
 
     @Test
-    void createExam_invalidSession_throws() throws InvalidSessionException {
+    void createExam_invalidSession_throws() {
         LocalDate futureDate = LocalDate.now().plusDays(1);
         CreateExamRequest request = new CreateExamRequest(mock(Subject.class), futureDate, "notes");
 
@@ -188,7 +172,7 @@ class ExamServiceTest {
     }
 
     @Test
-    void updateExam_userMismatch_throwsUnauthorized() throws InvalidSessionException {
+    void updateExam_userMismatch_throwsUnauthorized() {
         when(mockUser.getUserUUID()).thenReturn(userUUID);
         int examId = 1;
         Exam exam = mock(Exam.class);

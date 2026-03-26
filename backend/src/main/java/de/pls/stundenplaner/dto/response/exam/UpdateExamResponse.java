@@ -1,4 +1,6 @@
 package de.pls.stundenplaner.dto.response.exam;
 
-public class UpdateExamResponse {
+import de.pls.stundenplaner.dto.model.ExamDTO;
+
+public record UpdateExamResponse(ExamDTO examDTO) {
 }

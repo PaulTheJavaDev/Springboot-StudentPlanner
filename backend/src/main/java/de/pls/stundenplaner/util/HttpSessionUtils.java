@@ -18,11 +18,15 @@ public class HttpSessionUtils {
 
         final HttpSession session = request.getSession(false);
 
-        if (session == null || !Boolean.TRUE.equals(session.getAttribute("AUTHENTICATED"))) {
+        if (!isAuthenticated(session)) {
             throw new InvalidSessionException();
         }
 
         return session;
+    }
+
+    private static boolean isAuthenticated(final @NonNull HttpSession session) {
+        return Boolean.TRUE.equals(session.getAttribute("AUTHENTICATED"));
     }
 
     public static User getUserFromSession(

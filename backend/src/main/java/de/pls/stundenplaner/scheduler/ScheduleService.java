@@ -15,34 +15,29 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpSession;
 import lombok.NonNull;
 
+import static de.pls.stundenplaner.util.HttpSessionUtils.getUserFromSession;
+
 @Service
 public class ScheduleService {
 
     private final ScheduleRepository timeStampRepository;
     private final UserRepository userRepository;
 
-    public ScheduleService(ScheduleRepository timeStampRepository,
-                           UserRepository userRepository) {
+    public ScheduleService(
+            ScheduleRepository timeStampRepository,
+            UserRepository userRepository
+    ) {
         this.timeStampRepository = timeStampRepository;
         this.userRepository = userRepository;
-    }
-
-    private User getUserFromSession(
-            final @NonNull HttpSession session
-    ) throws InvalidSessionException {
-        Object rawUUID = session.getAttribute("USER_UUID");
-        if (!(rawUUID instanceof UUID userUUID)) {
-            throw new InvalidSessionException();
-        }
-        return userRepository.findByUserUUID(userUUID)
-                .orElseThrow(InvalidSessionException::new);
     }
 
     public List<ScheduleStamp> getMySchedule(
             final @NonNull HttpSession session
     ) throws InvalidSessionException {
-        User user = getUserFromSession(session);
+
+        final User user = getUserFromSession(userRepository, session);
         return timeStampRepository.findByUserUUID(user.getUserUUID());
+
     }
 
     public ScheduleStamp createTimeStamp(
@@ -50,12 +45,13 @@ public class ScheduleService {
             final @NonNull DayOfWeek dayOfWeek,
             final @NonNull CreateTimeStampRequest request
     ) throws InvalidSessionException {
-        User user = getUserFromSession(session);
 
-        ScheduleStamp timeStamp = new ScheduleStamp(request.type());
+        final User user = getUserFromSession(userRepository, session);
+        final ScheduleStamp timeStamp = new ScheduleStamp(request.type(), dayOfWeek);
+
         timeStamp.setDayOfWeek(dayOfWeek);
-        timeStamp.setText(request.text());
-        timeStamp.setUserUUID(user.getUserUUID()); // critical - links ownership
+        timeStamp.setType(request.type());
+        timeStamp.setUserUUID(user.getUserUUID());
 
         return timeStampRepository.save(timeStamp);
     }
@@ -67,7 +63,7 @@ public class ScheduleService {
             final int timeStampId
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
-        final User user = getUserFromSession(session);
+        final User user = getUserFromSession(userRepository, session);
 
         final ScheduleStamp timeStamp = timeStampRepository.findById(timeStampId)
                 .orElseThrow(EntityNotFoundException::new);
@@ -75,7 +71,7 @@ public class ScheduleService {
         validateUserOwnership(timeStamp, user.getUserUUID(), dayOfWeek);
 
         timeStamp.setType(request.type());
-        timeStamp.setText(request.text());
+        timeStamp.setDayOfWeek(dayOfWeek);
 
         return timeStampRepository.save(timeStamp);
     }
@@ -86,7 +82,7 @@ public class ScheduleService {
             final int timeStampId
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
-        final User user = getUserFromSession(session);
+        final User user = getUserFromSession(userRepository, session);
 
         final ScheduleStamp timeStamp = timeStampRepository.findById(timeStampId)
                 .orElseThrow(EntityNotFoundException::new);
@@ -105,6 +101,7 @@ public class ScheduleService {
         if (!timeStamp.getUserUUID().equals(userUUID)) {
             throw new UnauthorizedAccessException();
         }
+
         if (timeStamp.getDayOfWeek() != dayOfWeek) {
             throw new EntityNotFoundException();
         }
