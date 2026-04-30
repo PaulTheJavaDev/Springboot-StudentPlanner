@@ -1,5 +1,5 @@
 import { validateSessionAuth } from "../modules/Security.js";
-import { HOST, ASSIGNMENTS_URL, EXAMS_URL } from "../modules/Config.js";
+import { LOCALHOST, ASSIGNMENTS_URL, EXAMS_URL } from "../modules/Config.js";
 
 const elements = {
   container:  document.querySelector(".assignmentsContainer"),
@@ -25,9 +25,25 @@ const apiFetch = (url, method = "GET", body) =>
     ...(body && { body: JSON.stringify(body) })
   });
 
-const fetchAllEntries = ()          => apiFetch(getURL()).then(r => r.json());
-const fetchSubjects   = ()          => apiFetch(`${HOST}/subjects`).then(r => r.json());
-const updateEntry     = (id, data)  => apiFetch(`${getURL()}/${id}`, "PUT", data).then(r => r.json());
+const fetchAllEntries = async () => {
+  const response = await apiFetch(getURL());
+  return response.ok ? response.json() : [];
+};
+const fetchSubjects = async () => {
+  const response = await apiFetch(`${LOCALHOST}/subjects`);
+  return response.ok ? response.json() : [];
+};
+const updateEntry = async (id, data) => {
+  const response = await apiFetch(`${getURL()}/${id}`, "PUT", data);
+  if (!response.ok) {
+    return null;
+  }
+  try {
+    return await response.json();
+  } catch {
+    return data;
+  }
+};
 const deleteEntry     = async id    => (await apiFetch(`${getURL()}/${id}`, "DELETE")).ok;
 
 const createEntry = async (data) => {
@@ -36,6 +52,11 @@ const createEntry = async (data) => {
   if (!response.ok && response.status === 400) {
     showMessage("Please enter a valid future date!", 2);
     return;
+  }
+
+  if (!response.ok) {
+    showMessage("Request failed. Please try again.", 2);
+    return null;
   }
 
   return response.json();
@@ -49,16 +70,19 @@ const showMessage = (message, seconds = 2) => {
 const formatDate = date => new Date(date).toLocaleDateString();
 const stripTime  = date => date.split("T")[0];
 
-const createElement = (tag, className, innerHTML, props = {}) => {
+const createElement = (tag, className, textContent, props = {}) => {
   const element = document.createElement(tag);
   if (className)  element.className = className;
-  if (innerHTML)  element.innerHTML = innerHTML;
+  if (textContent) {
+    element.textContent = textContent;
+  }
   Object.entries(props).forEach(([key, value]) => element[key] = value);
   return element;
 };
 
 const createField = (label, value, type, key) => {
-  const wrapper   = createElement("p", `assignment-${key}`, `${label}: `);
+  const wrapper   = createElement("p", `assignment-${key}`);
+  wrapper.appendChild(document.createTextNode(`${label}: `));
   const textNode  = createElement("span");
   const inputNode = createElement(type === "date" ? "input" : "textarea");
 
@@ -107,7 +131,7 @@ const saveEdit = async (entry, fields) => {
 
   fields.dueDate.text.textContent = formatDate(entry.dueDate);
   fields.notes.text.textContent   = entry.notes;
-  fields.completedText.innerHTML  = `Completed: ${entry.completed}`;
+  fields.completedText.textContent = `Completed: ${entry.completed}`;
   return true;
 };
 
@@ -129,7 +153,7 @@ const showContextMenu = (card, entry, fields, state) => {
   toggleButton.onclick = async () => {
     entry.completed = !entry.completed;
     if (await updateEntry(entry.id, entry)) {
-      fields.completedText.innerHTML = `Completed: ${entry.completed}`;
+      fields.completedText.textContent = `Completed: ${entry.completed}`;
       menu.remove();
     }
   };
@@ -145,11 +169,11 @@ const createCard = (entry) => {
   const subjectHeading    = createElement("h3", "assignment-subject", entry.subject);
   const dueDateField      = createField("Due date", entry.dueDate, "date",     "due-date");
   const notesField        = createField("Notes",    entry.notes,   "textarea", "notes");
-  const completedText     = createElement("p", "assignment-completed", `Completed: false`);
+  const completedText     = createElement("p", "assignment-completed", `Completed: ${entry.completed}`);
 
   const completedLabel = createElement("label");
   completedLabel.style.cssText = "display:none;align-items:center;gap:0.5rem;font-size:0.9rem";
-  completedLabel.innerHTML     = "Completed: ";
+  completedLabel.textContent = "Completed: ";
   const completedCheckbox = createElement("input", null, null, { type: "checkbox", checked: entry.completed });
   completedLabel.appendChild(completedCheckbox);
 
@@ -178,7 +202,9 @@ const createCard = (entry) => {
 };
 
 const checkIfEmpty = (count) => {
-  elements.responder.textContent = count === 0 ? `No ${getMode().splice(0, 1).toUpperCase() + getMode().slice(1)} yet` : "";
+  const mode = getMode();
+  const label = mode.charAt(0).toUpperCase() + mode.slice(1);
+  elements.responder.textContent = count === 0 ? `No ${label} yet` : "";
 };
 
 const loadEntries = async () => {

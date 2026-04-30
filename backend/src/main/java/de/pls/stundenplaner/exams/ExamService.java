@@ -155,7 +155,7 @@ public class ExamService {
             final int examId
     ) throws InvalidSessionException, EntityNotFoundException {
 
-        getUserFromSession(userRepository, session);
+        final User user = getUserFromSession(userRepository, session);
 
         final Optional<Exam> examOptional = examRepository.findById(examId);
         if (examOptional.isEmpty()) {
@@ -163,6 +163,10 @@ public class ExamService {
         }
 
         final Exam exam = examOptional.get();
+
+        if (!exam.getUserUUID().equals(user.getUserUUID())) {
+            throw new EntityNotFoundException("Exam with ID " + examId + " was not found.");
+        }
 
         examRepository.delete(exam);
     }

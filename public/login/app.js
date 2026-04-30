@@ -56,8 +56,13 @@ async function login(username, password) {
         return false;
     }
 
-    if (result.status === 409) {
-        showResponse(UserSpecificErrors.usernameAlreadyExists);
+    if (result.status === 401) {
+        showResponse(LoginErrors.invalidCredentials);
+        return false;
+    }
+
+    if (!result.ok) {
+        showResponse(defaultError);
         return false;
     }
 
@@ -83,7 +88,7 @@ async function login(username, password) {
 async function register(username, password) {
 
     if (isEmpty(username) || isEmpty(password)) {
-        showResponse(errorMessages.emptyFields);
+        showResponse(LoginErrors.emptyFields);
         return false;
     }
 
@@ -96,12 +101,16 @@ async function register(username, password) {
             body: JSON.stringify({ username, password })
         });
     } catch (error) {
-        showResponse(errorMessages.defaultError);
+        showResponse(defaultError);
         return false;
     }
 
     if (!result.ok) {
-        showResponse(errorMessages.invalidRegisterCredentials);
+        if (result.status === 409) {
+            showResponse(UserSpecificErrors.usernameAlreadyExists);
+            return false;
+        }
+        showResponse(defaultError);
         return false;
     }
 
@@ -113,7 +122,7 @@ async function handleLoginPress() {
     const password = elements.passwordElement.value.trim();
 
     if (isEmpty(username) || isEmpty(password)) {
-        showResponse(errorMessages.emptyFields);
+        showResponse(LoginErrors.emptyFields);
         return;
     }
 
@@ -128,7 +137,7 @@ async function handleRegisterPress() {
     const password = elements.passwordElement.value.trim();
 
     if (isEmpty(username) || isEmpty(password)) {
-        showResponse(errorMessages.emptyFields);
+        showResponse(LoginErrors.emptyFields);
         return;
     }
 

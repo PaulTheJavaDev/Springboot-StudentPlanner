@@ -36,8 +36,8 @@ async function apiRequest(method, url, data) {
             };
         }
 
-        // DELETE often returns no body
-        if (method === "DELETE") {
+        // DELETE and 204 responses often return no body
+        if (method === "DELETE" || response.status === 204) {
             return { ok: true };
         }
 
@@ -63,8 +63,8 @@ export async function requestScheduler() {
     return apiRequest(httpMethods.GET, SCHEDULE_URL);
 }
 
-export async function createScheduleStamp(scheduleStampType, dayOfWeek) {
-    return apiRequest(httpMethods.POST, `${SCHEDULE_URL}/${dayOfWeek}`, scheduleStampType);
+export async function createScheduleStamp(data, dayOfWeek) {
+    return apiRequest(httpMethods.POST, `${SCHEDULE_URL}/${dayOfWeek}`, data);
 }
 
 export async function updateScheduleStamp(dayOfWeek, data) {

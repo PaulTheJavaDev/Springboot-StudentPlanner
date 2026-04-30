@@ -18,7 +18,7 @@ public class HttpSessionUtils {
 
         final HttpSession session = request.getSession(false);
 
-        if (!isAuthenticated(session)) {
+        if (session == null || !isAuthenticated(session)) {
             throw new InvalidSessionException();
         }
 
@@ -36,7 +36,7 @@ public class HttpSessionUtils {
 
         final Object rawUUID = session.getAttribute("USER_UUID");
         if (!(rawUUID instanceof UUID userUUID)) {
-            throw new IllegalArgumentException("SessionID is not type of: UUID.");
+            throw new InvalidSessionException();
         }
 
         return userRepository.findByUserUUID(userUUID)

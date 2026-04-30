@@ -5,6 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.DateTimeException;
+import jakarta.persistence.EntityNotFoundException;
+
 @RestControllerAdvice
 public class GlobalExceptionsHandler {
 
@@ -34,6 +37,21 @@ public class GlobalExceptionsHandler {
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<Void> handleUserAlreadyExists() {
         return ResponseEntity.status(BAD_REQUEST_STATUS_CODE).build();
+    }
+
+    @ExceptionHandler(DateTimeException.class)
+    public ResponseEntity<Void> handleInvalidDate() {
+        return ResponseEntity.status(BAD_REQUEST_STATUS_CODE).build();
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Void> handleIllegalArgument() {
+        return ResponseEntity.status(BAD_REQUEST_STATUS_CODE).build();
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Void> handleEntityNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
 }

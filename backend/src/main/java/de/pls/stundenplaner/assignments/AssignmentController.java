@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.NonNull;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -59,7 +58,7 @@ public class AssignmentController {
     ) throws UnauthorizedAccessException, InvalidSessionException {
 
         final HttpSession session = HttpSessionUtils.getValidSession(request);
-        return new ResponseEntity<>(service.updateAssignment(session, updateRequest, assignmentId), HttpStatus.OK);
+        return ResponseEntity.ok(service.updateAssignment(session, updateRequest, assignmentId));
 
     }
 
@@ -70,18 +69,8 @@ public class AssignmentController {
     ) throws InvalidSessionException, UnauthorizedAccessException {
 
         final HttpSession session = HttpSessionUtils.getValidSession(request);
-
-        try {
-            service.deleteAssignment(session, assignmentId);
-        } catch (UnauthorizedAccessException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        } catch (InvalidSessionException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-
         service.deleteAssignment(session, assignmentId);
-
-        return new ResponseEntity<>(HttpStatus.OK);
+        return ResponseEntity.noContent().build();
 
     }
 

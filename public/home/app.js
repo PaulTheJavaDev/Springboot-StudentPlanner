@@ -1,6 +1,5 @@
-import { SCHEDULE_URL, LOCALHOST } from "../modules/Config.js";
+import { SCHEDULE_URL } from "../modules/Config.js";
 import { validateSessionAuth } from "../modules/Security.js";
-import "../modules/Requests.js";
 import {
     createScheduleStamp,
     deleteScheduleStamp,
@@ -13,6 +12,14 @@ import {
 const types = {
     LESSON: "LESSON",
     BREAK: "BREAK",
+};
+
+function toUiType(apiType) {
+    return apiType === types.BREAK ? "break" : "lesson";
+}
+
+function toLabel(stamp) {
+    return stamp.type === types.BREAK ? "Break" : stamp.subject ?? "Lesson";
 }
 
 function createMenu(options, button) {
@@ -50,12 +57,11 @@ function createMenu(options, button) {
 }
 
 function createTimeStampElement(dayOfWeek, data) {
-
     const div = document.createElement("div");
-    div.className = data.type;
+    div.className = toUiType(data.type);
 
     const span = document.createElement("span");
-    span.textContent = data.text;
+    span.textContent = toLabel(data);
     div.appendChild(span);
 
     const editButton = document.createElement("button");
@@ -64,7 +70,7 @@ function createTimeStampElement(dayOfWeek, data) {
     div.appendChild(editButton);
 
     const options = [];
-    if (data.type === "lesson") {
+    if (data.type === types.LESSON) {
         applyMenuEntries(options, span, dayOfWeek, data);
     }
 
@@ -73,9 +79,12 @@ function createTimeStampElement(dayOfWeek, data) {
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Delete";
     deleteButton.onclick = async () => {
+        const result = await deleteScheduleStamp(`${SCHEDULE_URL}/${dayOfWeek}/${data.id}`);
+        if (!result.ok) {
+            return;
+        }
         div.remove();
         menu.remove();
-        await deleteScheduleStamp(`${SCHEDULE_URL}/${dayOfWeek}/${data.id}`)
     };
 
     menu.appendChild(deleteButton);
@@ -89,12 +98,12 @@ function applyMenuEntries(options, span, dayOfWeek, data) {
         action: async () => {
 
             const subjects = await getSubjects();
-            if (!subjects) {
+            if (!subjects.ok || !Array.isArray(subjects.data)) {
                 return;
             }
 
             const select = document.createElement("select");
-            subjects.forEach(name => {
+            subjects.data.forEach(name => {
                 const option = document.createElement("option");
                 option.value = option.textContent = name;
                 option.selected = name === span.textContent;
@@ -105,8 +114,11 @@ function applyMenuEntries(options, span, dayOfWeek, data) {
             select.focus();
 
             const save = async () => {
-                await updateScheduleStamp(dayOfWeek, data.type)
-
+                data.subject = select.value;
+                const result = await updateScheduleStamp(dayOfWeek, data);
+                if (!result.ok) {
+                    return;
+                }
                 span.textContent = select.value;
                 select.replaceWith(span);
             };
@@ -118,17 +130,20 @@ function applyMenuEntries(options, span, dayOfWeek, data) {
 }
 
 async function loadSchedule() {
-
-    const timeStamps = await requestScheduler();
-    console.log("Loaded schedule timestamps:", timeStamps);
-
-    if (!timeStamps) {
-        console.log("Failed to load schedule.");
+    const response = await requestScheduler();
+    if (!response.ok || !Array.isArray(response.data)) {
         return;
     }
 
-    Object.entries(timeStamps).forEach(([dayOfWeek, scheduleStamps]) => {
+    const groupedByDay = response.data.reduce((acc, stamp) => {
+        if (!acc[stamp.dayOfWeek]) {
+            acc[stamp.dayOfWeek] = [];
+        }
+        acc[stamp.dayOfWeek].push(stamp);
+        return acc;
+    }, {});
 
+    Object.entries(groupedByDay).forEach(([dayOfWeek, scheduleStamps]) => {
         const container = document.getElementById(dayOfWeek);
         if (!container) {
             return;
@@ -149,19 +164,17 @@ async function loadSchedule() {
 }
 
 async function addItem(dayOfWeek, type) {
-
     const container = document.getElementById(dayOfWeek);
     if (!container) {
         return;
     }
 
-    const scheduleStamp = await createScheduleStamp(type, dayOfWeek);
-
-    if (!scheduleStamp) {
+    const response = await createScheduleStamp({ type }, dayOfWeek);
+    if (!response.ok) {
         return;
     }
 
-    const element = createTimeStampElement(dayOfWeek, scheduleStamp);
+    const element = createTimeStampElement(dayOfWeek, response.data);
     container.querySelector(".entriesContainer").appendChild(element);
 }
 
