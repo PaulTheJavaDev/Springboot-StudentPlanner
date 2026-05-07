@@ -9,10 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,9 +31,6 @@ import jakarta.servlet.http.HttpSession;
 class AuthControllerTest {
 
     @Mock
-    private AuthService authService;
-
-    @Mock
     private UserRepository userRepository;
 
     @Mock
@@ -45,7 +39,7 @@ class AuthControllerTest {
     @Mock
     private HttpSession session;
 
-    @InjectMocks
+    private FakeAuthService authService;
     private AuthController controller;
 
     private User mockUser;
@@ -53,9 +47,12 @@ class AuthControllerTest {
 
     @SuppressWarnings("unused")
     @BeforeEach
-    void setUp() {
+    void setUp() throws EmptyUsernameException {
+        authService = new FakeAuthService();
+        controller = new AuthController(authService, userRepository);
         userUUID = UUID.randomUUID();
-        mockUser = mock(User.class);
+        mockUser = new User("auth-user", "hash");
+        mockUser.setUserUUID(userUUID);
     }
 
     // -- Logins -- //
@@ -65,7 +62,6 @@ class AuthControllerTest {
         LoginRequest loginRequest = new LoginRequest("user", "pass");
         when(userRepository.findByUsername("user")).thenReturn(Optional.of(mockUser));
         when(request.getSession(true)).thenReturn(session);
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
 
         ResponseEntity<LoginResponse> response = controller.login(loginRequest, request);
 
@@ -77,7 +73,7 @@ class AuthControllerTest {
     @Test
     void login_invalidCredentials_returnsUnauthorized() throws InvalidLoginException, NoSuchAlgorithmException {
         LoginRequest loginRequest = new LoginRequest("user", "wrongPassword");
-        doThrow(new InvalidLoginException()).when(authService).checkLogin(loginRequest);
+        authService.loginException = new InvalidLoginException();
 
         ResponseEntity<LoginResponse> response = controller.login(loginRequest, request);
 
@@ -99,19 +95,19 @@ class AuthControllerTest {
     // -- Registers -- //
 
     @Test
-    void register_newUser_returnsOk() throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
+    void register_newUser_returnsOk() throws UserAlreadyExistsException, EmptyUsernameException {
         RegisterRequest registerRequest = new RegisterRequest("newUser", "pass");
+        authService.registerResponse = new RegisterResponse(UUID.randomUUID());
 
         ResponseEntity<RegisterResponse> response = controller.register(registerRequest);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(authService).registerUser(registerRequest);
     }
 
     @Test
-    void register_existingUser_returnsConflict() throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
+    void register_existingUser_returnsConflict() throws UserAlreadyExistsException, EmptyUsernameException {
         RegisterRequest registerRequest = new RegisterRequest("existingUser", "pass");
-        doThrow(new UserAlreadyExistsException()).when(authService).registerUser(registerRequest);
+        authService.registerException = new UserAlreadyExistsException();
 
         ResponseEntity<RegisterResponse> response = controller.register(registerRequest);
 
@@ -119,13 +115,13 @@ class AuthControllerTest {
     }
 
     @Test
-    void register_emptyUsername_returnsUnauthorized() throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
+    void register_emptyUsername_returnsBadRequest() throws UserAlreadyExistsException, EmptyUsernameException {
         RegisterRequest registerRequest = new RegisterRequest("", "pass");
-        doThrow(new EmptyUsernameException()).when(authService).registerUser(registerRequest);
+        authService.registerException = new EmptyUsernameException();
 
         ResponseEntity<RegisterResponse> response = controller.register(registerRequest);
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     // -- checks -- //
@@ -171,5 +167,42 @@ class AuthControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(Boolean.FALSE, response.getBody());
+    }
+
+    private static final class FakeAuthService extends AuthService {
+        private LoginResponse loginResponse;
+        private Exception loginException;
+        private RegisterResponse registerResponse;
+        private Exception registerException;
+
+        private FakeAuthService() {
+            super(null);
+        }
+
+        @Override
+        public LoginResponse checkLogin(LoginRequest loginRequest) throws InvalidLoginException, NoSuchAlgorithmException {
+            if (loginException != null) {
+                if (loginException instanceof InvalidLoginException invalidLoginException) {
+                    throw invalidLoginException;
+                }
+                if (loginException instanceof NoSuchAlgorithmException noSuchAlgorithmException) {
+                    throw noSuchAlgorithmException;
+                }
+            }
+            return loginResponse != null ? loginResponse : new LoginResponse(UUID.randomUUID());
+        }
+
+        @Override
+        public RegisterResponse registerUser(RegisterRequest registerRequest) throws UserAlreadyExistsException, EmptyUsernameException {
+            if (registerException != null) {
+                if (registerException instanceof UserAlreadyExistsException userAlreadyExistsException) {
+                    throw userAlreadyExistsException;
+                }
+                if (registerException instanceof EmptyUsernameException emptyUsernameException) {
+                    throw emptyUsernameException;
+                }
+            }
+            return registerResponse != null ? registerResponse : new RegisterResponse(UUID.randomUUID());
+        }
     }
 }

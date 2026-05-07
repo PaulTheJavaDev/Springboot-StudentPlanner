@@ -2,6 +2,7 @@ package de.pls.stundenplaner.util;
 
 import de.pls.stundenplaner.auth.User;
 import de.pls.stundenplaner.auth.UserRepository;
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,16 +23,16 @@ class UserUtilTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
     private User user;
 
     private UUID validSessionID;
 
     @SuppressWarnings("all")
     @BeforeEach
-    void setUp() {
+    void setUp() throws EmptyUsernameException {
         new UserUtil(userRepository);
         validSessionID = UUID.randomUUID();
+        user = new User("user", "hash");
     }
 
     @Test

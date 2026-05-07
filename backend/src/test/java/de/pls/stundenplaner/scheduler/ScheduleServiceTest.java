@@ -5,6 +5,7 @@ import de.pls.stundenplaner.auth.UserRepository;
 import de.pls.stundenplaner.dto.request.scheduler.CreateTimeStampRequest;
 import de.pls.stundenplaner.dto.request.scheduler.UpdateTimeStampRequest;
 import de.pls.stundenplaner.scheduler.type.ScheduleStampType;
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
@@ -44,9 +45,9 @@ class ScheduleServiceTest {
     private UpdateTimeStampRequest updateTimeStampRequest;
 
     @BeforeEach
-    void setUp() {
-        userUUID = UUID.randomUUID();
-        mockUser = mock(User.class);
+    void setUp() throws EmptyUsernameException {
+        mockUser = new User("schedule-user", "hash");
+        userUUID = mockUser.getUserUUID();
         mockSession = mock(HttpSession.class);
 
         createTimeStampRequest = new CreateTimeStampRequest(ScheduleStampType.LESSON);
@@ -63,8 +64,7 @@ class ScheduleServiceTest {
     @Test
     void getAllTimeStamps_validSession_returnsList() throws InvalidSessionException {
         setupValidSession();
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-        List<ScheduleStamp> expected = List.of(mock(ScheduleStamp.class));
+        List<ScheduleStamp> expected = List.of(new ScheduleStamp(ScheduleStampType.LESSON, DayOfWeek.MONDAY));
         when(timeStampRepository.findByUserUUID(userUUID)).thenReturn(expected);
 
         List<ScheduleStamp> result = timeStampService.getMySchedule(mockSession);
@@ -93,9 +93,7 @@ class ScheduleServiceTest {
     void createTimeStamp_validRequest_savesAndReturns() throws InvalidSessionException {
 
         setupValidSession();
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-
-        final ScheduleStamp savedTimeStamp = mock(ScheduleStamp.class);
+        final ScheduleStamp savedTimeStamp = new ScheduleStamp(ScheduleStampType.LESSON, DayOfWeek.MONDAY);
         when(timeStampRepository.save(any(ScheduleStamp.class))).thenReturn(savedTimeStamp);
 
         ScheduleStamp result = timeStampService.createTimeStamp(mockSession, DayOfWeek.MONDAY, createTimeStampRequest);
@@ -129,18 +127,16 @@ class ScheduleServiceTest {
 
         setupValidSession();
 
-        final ScheduleStamp timeStamp = mock(ScheduleStamp.class);
+        final ScheduleStamp timeStamp = new ScheduleStamp(ScheduleStampType.BREAK, DayOfWeek.MONDAY);
         final int timeStampId = 1;
 
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-        when(timeStamp.getUserUUID()).thenReturn(userUUID);
-        when(timeStamp.getDayOfWeek()).thenReturn(DayOfWeek.MONDAY);
+        timeStamp.setUserUUID(userUUID);
         when(timeStampRepository.findById(timeStampId)).thenReturn(Optional.of(timeStamp));
         when(timeStampRepository.save(timeStamp)).thenReturn(timeStamp);
 
         ScheduleStamp result = timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, updateTimeStampRequest, timeStampId);
 
-        verify(timeStamp).setType(updateTimeStampRequest.type());
+        assertThat(result.getType()).isEqualTo(updateTimeStampRequest.type());
         verify(timeStampRepository).save(timeStamp);
 
         assertThat(result).isEqualTo(timeStamp);
@@ -176,9 +172,8 @@ class ScheduleServiceTest {
     @Test
     void updateTimeStamp_wrongUser_throwsUnauthorizedAccess() {
         setupValidSession();
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-        ScheduleStamp timeStamp = mock(ScheduleStamp.class);
-        when(timeStamp.getUserUUID()).thenReturn(UUID.randomUUID());
+        ScheduleStamp timeStamp = new ScheduleStamp(ScheduleStampType.LESSON, DayOfWeek.MONDAY);
+        timeStamp.setUserUUID(UUID.randomUUID());
         when(timeStampRepository.findById(1)).thenReturn(Optional.of(timeStamp));
 
         assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, updateTimeStampRequest, 1))
@@ -188,10 +183,8 @@ class ScheduleServiceTest {
     @Test
     void updateTimeStamp_wrongDayOfWeek_throwsEntityNotFound() {
         setupValidSession();
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-        ScheduleStamp timeStamp = mock(ScheduleStamp.class);
-        when(timeStamp.getUserUUID()).thenReturn(userUUID);
-        when(timeStamp.getDayOfWeek()).thenReturn(DayOfWeek.FRIDAY);
+        ScheduleStamp timeStamp = new ScheduleStamp(ScheduleStampType.LESSON, DayOfWeek.FRIDAY);
+        timeStamp.setUserUUID(userUUID);
         when(timeStampRepository.findById(1)).thenReturn(Optional.of(timeStamp));
 
         assertThatThrownBy(() -> timeStampService.updateTimeStamp(mockSession, DayOfWeek.MONDAY, updateTimeStampRequest, 1))
@@ -203,11 +196,9 @@ class ScheduleServiceTest {
     @Test
     void deleteTimeStamp_validRequest_deletes() throws InvalidSessionException, UnauthorizedAccessException {
         setupValidSession();
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
         int timeStampId = 1;
-        ScheduleStamp timeStamp = mock(ScheduleStamp.class);
-        when(timeStamp.getUserUUID()).thenReturn(userUUID);
-        when(timeStamp.getDayOfWeek()).thenReturn(DayOfWeek.FRIDAY);
+        ScheduleStamp timeStamp = new ScheduleStamp(ScheduleStampType.LESSON, DayOfWeek.FRIDAY);
+        timeStamp.setUserUUID(userUUID);
         when(timeStampRepository.findById(timeStampId)).thenReturn(Optional.of(timeStamp));
 
         timeStampService.deleteTimeStamp(mockSession, DayOfWeek.FRIDAY, timeStampId);
@@ -239,9 +230,8 @@ class ScheduleServiceTest {
     @Test
     void deleteTimeStamp_wrongUser_throwsUnauthorizedAccess() {
         setupValidSession();
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-        ScheduleStamp timeStamp = mock(ScheduleStamp.class);
-        when(timeStamp.getUserUUID()).thenReturn(UUID.randomUUID());
+        ScheduleStamp timeStamp = new ScheduleStamp(ScheduleStampType.LESSON, DayOfWeek.MONDAY);
+        timeStamp.setUserUUID(UUID.randomUUID());
         when(timeStampRepository.findById(1)).thenReturn(Optional.of(timeStamp));
 
         assertThatThrownBy(() -> timeStampService.deleteTimeStamp(mockSession, DayOfWeek.MONDAY, 1))
@@ -251,10 +241,8 @@ class ScheduleServiceTest {
     @Test
     void deleteTimeStamp_wrongDayOfWeek_throwsEntityNotFound() {
         setupValidSession();
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-        ScheduleStamp timeStamp = mock(ScheduleStamp.class);
-        when(timeStamp.getUserUUID()).thenReturn(userUUID);
-        when(timeStamp.getDayOfWeek()).thenReturn(DayOfWeek.WEDNESDAY);
+        ScheduleStamp timeStamp = new ScheduleStamp(ScheduleStampType.LESSON, DayOfWeek.WEDNESDAY);
+        timeStamp.setUserUUID(userUUID);
         when(timeStampRepository.findById(1)).thenReturn(Optional.of(timeStamp));
 
         assertThatThrownBy(() -> timeStampService.deleteTimeStamp(mockSession, DayOfWeek.MONDAY, 1))

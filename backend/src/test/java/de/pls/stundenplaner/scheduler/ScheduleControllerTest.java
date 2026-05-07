@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,13 +22,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ScheduleControllerTest {
-
-    @Mock
-    private ScheduleService service;
 
     @Mock
     private HttpServletRequest request;
@@ -37,7 +32,7 @@ public class ScheduleControllerTest {
     @Mock
     private HttpSession session;
 
-    @InjectMocks
+    private FakeScheduleService service;
     private ScheduleController controller;
 
     private ScheduleStamp testSchedule;
@@ -46,6 +41,8 @@ public class ScheduleControllerTest {
 
     @BeforeEach
     void setUp() {
+        service = new FakeScheduleService();
+        controller = new ScheduleController(service);
         testSchedule = new ScheduleStamp();
         testCreateRequest = new CreateTimeStampRequest(ScheduleStampType.LESSON);
         testUpdateRequest = new UpdateTimeStampRequest(ScheduleStampType.LESSON);
@@ -59,7 +56,7 @@ public class ScheduleControllerTest {
         try (MockedStatic<HttpSessionUtils> httpSessionUtilsMockedStatic = mockStatic(HttpSessionUtils.class)) {
 
             httpSessionUtilsMockedStatic.when(() -> HttpSessionUtils.getValidSession(request)).thenReturn(session);
-            when(service.getMySchedule(session)).thenReturn(List.of(testSchedule));
+            service.schedules = List.of(testSchedule);
 
             ResponseEntity<List<ScheduleStamp>> response = controller.getSchedule(request);
 
@@ -79,7 +76,7 @@ public class ScheduleControllerTest {
         try (MockedStatic<HttpSessionUtils> httpSessionUtilsMockedStatic = mockStatic(HttpSessionUtils.class)) {
 
             httpSessionUtilsMockedStatic.when(() -> HttpSessionUtils.getValidSession(request)).thenReturn(session);
-            when(service.createTimeStamp(session, DayOfWeek.MONDAY, testCreateRequest)).thenReturn(testSchedule);
+            service.created = testSchedule;
 
             ResponseEntity<ScheduleStamp> response = controller.createTimeStamp(request, DayOfWeek.MONDAY, testCreateRequest);
 
@@ -98,7 +95,7 @@ public class ScheduleControllerTest {
         try (MockedStatic<HttpSessionUtils> httpSessionUtilsMockedStatic = mockStatic(HttpSessionUtils.class)) {
 
             httpSessionUtilsMockedStatic.when(() -> HttpSessionUtils.getValidSession(request)).thenReturn(session);
-            when(service.updateTimeStamp(session, DayOfWeek.MONDAY, testUpdateRequest, 1)).thenReturn(testSchedule);
+            service.updated = testSchedule;
 
             ResponseEntity<ScheduleStamp> response = controller.updateTimeStamp(request, DayOfWeek.MONDAY, 1, testUpdateRequest);
 
@@ -137,4 +134,42 @@ public class ScheduleControllerTest {
         }
     }
 
+    private static final class FakeScheduleService extends ScheduleService {
+        private List<ScheduleStamp> schedules = List.of();
+        private ScheduleStamp created;
+        private ScheduleStamp updated;
+
+        private FakeScheduleService() {
+            super(null, null);
+        }
+
+        @Override
+        public List<ScheduleStamp> getMySchedule(jakarta.servlet.http.HttpSession session) {
+            return schedules;
+        }
+
+        @Override
+        public ScheduleStamp createTimeStamp(
+                jakarta.servlet.http.HttpSession session,
+                DayOfWeek dayOfWeek,
+                CreateTimeStampRequest request
+        ) {
+            return created;
+        }
+
+        @Override
+        public ScheduleStamp updateTimeStamp(
+                jakarta.servlet.http.HttpSession session,
+                DayOfWeek dayOfWeek,
+                UpdateTimeStampRequest request,
+                int timeStampId
+        ) {
+            return updated;
+        }
+
+        @Override
+        public void deleteTimeStamp(jakarta.servlet.http.HttpSession session, DayOfWeek dayOfWeek, int timeStampId) {
+            // nothing to do
+        }
+    }
 }

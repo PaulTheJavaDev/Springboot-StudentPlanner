@@ -9,6 +9,7 @@ import de.pls.stundenplaner.dto.response.exam.CreateExamResponse;
 import de.pls.stundenplaner.dto.response.exam.GetAllExamsResponse;
 import de.pls.stundenplaner.subjects.Subject;
 import de.pls.stundenplaner.util.HttpSessionUtils;
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
@@ -52,10 +53,10 @@ class ExamServiceTest {
     );
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws EmptyUsernameException {
         mockSession = mock(HttpSession.class);
-        mockUser  = mock(User.class);
-        userUUID  = UUID.randomUUID();
+        mockUser  = new User("exam-user", "hash");
+        userUUID  = mockUser.getUserUUID();
     }
 
     // -- Get Exams -- //
@@ -77,9 +78,8 @@ class ExamServiceTest {
     @Test
     void createExam_validRequest_createsAndReturns() throws InvalidSessionException {
         
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
         LocalDate futureDate = LocalDate.now().plusDays(7);
-        Subject subject = mock(Subject.class);
+        Subject subject = Subject.ART;
         CreateExamRequest request = new CreateExamRequest(subject, futureDate, "Some notes");
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
@@ -97,7 +97,7 @@ class ExamServiceTest {
     @Test
     void createExam_pastDueDate_throwsDateTimeException() {
         LocalDate pastDate = LocalDate.now().minusDays(1);
-        CreateExamRequest request = new CreateExamRequest(mock(Subject.class), pastDate, "notes");
+        CreateExamRequest request = new CreateExamRequest(Subject.ART, pastDate, "notes");
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
 
@@ -113,7 +113,7 @@ class ExamServiceTest {
     @Test
     void createExam_invalidSession_throws() {
         LocalDate futureDate = LocalDate.now().plusDays(1);
-        CreateExamRequest request = new CreateExamRequest(mock(Subject.class), futureDate, "notes");
+        CreateExamRequest request = new CreateExamRequest(Subject.ART, futureDate, "notes");
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
 
@@ -129,10 +129,9 @@ class ExamServiceTest {
 
     @Test
     void updateExam_validRequest_updatesAndReturns() throws Exception {
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
         int examId = 1;
-        Exam exam = mock(Exam.class);
-        when(exam.getUserUUID()).thenReturn(userUUID);
+        Exam exam = new Exam(Subject.ART, "old notes", LocalDate.now().plusDays(4));
+        exam.setUserUUID(userUUID);
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
 
@@ -144,12 +143,11 @@ class ExamServiceTest {
 
             Exam result = examService.updateExam(mockSession, updateExamRequest, examId);
 
-            verify(exam).setNotes(updateExamRequest.notes());
-            verify(exam).setSubject(updateExamRequest.subject());
-            verify(exam).setDueDate(updateExamRequest.dueDate());
-            verify(exam).setUserUUID(userUUID);
             verify(examRepository).save(exam);
             assertThat(result).isEqualTo(exam);
+            assertThat(result.getNotes()).isEqualTo(updateExamRequest.notes());
+            assertThat(result.getSubject()).isEqualTo(updateExamRequest.subject());
+            assertThat(result.getDueDate()).isEqualTo(updateExamRequest.dueDate());
         }
     }
 
@@ -173,10 +171,9 @@ class ExamServiceTest {
 
     @Test
     void updateExam_userMismatch_throwsUnauthorized() {
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
         int examId = 1;
-        Exam exam = mock(Exam.class);
-        when(exam.getUserUUID()).thenReturn(UUID.randomUUID()); // different UUID or a 1 in 9 Quintillion change that these two will be the same lmao
+        Exam exam = new Exam(Subject.ART, "old notes", LocalDate.now().plusDays(4));
+        exam.setUserUUID(UUID.randomUUID());
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
 
@@ -208,7 +205,8 @@ class ExamServiceTest {
     @Test
     void deleteExam_validRequest_deletesSuccessfully() throws InvalidSessionException {
         int examId = 1;
-        Exam exam = mock(Exam.class);
+        Exam exam = new Exam(Subject.ART, "old notes", LocalDate.now().plusDays(4));
+        exam.setUserUUID(userUUID);
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
 

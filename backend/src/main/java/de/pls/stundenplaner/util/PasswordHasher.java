@@ -1,7 +1,7 @@
 package de.pls.stundenplaner.util;
 
 import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -9,13 +9,48 @@ import java.security.NoSuchAlgorithmException;
 
 public final class PasswordHasher {
 
+    private static final BCryptPasswordEncoder BCRYPT_PASSWORD_ENCODER = new BCryptPasswordEncoder();
+
+    private PasswordHasher() {
+    }
+
     /**
-     * Irreversible Encoding method using the built-in Java "SHA-256" Algorithm.
+     * Hashes a raw password using BCrypt (salted and adaptive).
      *
-     * @param password Password to encode.
-     * @return The encoded Password.
+     * @param password Password to hash.
+     * @return BCrypt hash string.
      */
-    public static String sha256(
+    public static String hashPassword(
+            final @NonNull String password
+    ) {
+        return BCRYPT_PASSWORD_ENCODER.encode(password);
+    }
+
+    /**
+     * Verifies a raw password against a stored BCrypt hash.
+     *
+     * @param rawPassword Raw password from login request.
+     * @param bcryptHash Stored BCrypt hash.
+     * @return true if password matches.
+     */
+    public static boolean matchesPassword(
+            final @NonNull String rawPassword,
+            final @NonNull String bcryptHash
+    ) {
+        return BCRYPT_PASSWORD_ENCODER.matches(rawPassword, bcryptHash);
+    }
+
+    /**
+     * Identifies legacy SHA-256 hex hashes used before BCrypt migration.
+     */
+    public static boolean isLegacySha256Hash(final String storedHash) {
+        return storedHash != null && storedHash.matches("^[a-fA-F0-9]{64}$");
+    }
+
+    /**
+     * Legacy one-way hash retained only for backward-compatible login migration.
+     */
+    public static String legacySha256(
             final @NonNull String password
     ) throws NoSuchAlgorithmException {
         try {

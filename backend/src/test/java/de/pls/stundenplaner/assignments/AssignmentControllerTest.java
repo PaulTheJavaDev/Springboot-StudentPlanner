@@ -5,12 +5,12 @@ import de.pls.stundenplaner.dto.request.assignment.UpdateAssignmentRequest;
 import de.pls.stundenplaner.subjects.Subject;
 import de.pls.stundenplaner.util.HttpSessionUtils;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
+import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,22 +27,21 @@ import static org.mockito.Mockito.*;
 class AssignmentControllerTest {
 
     @Mock
-    private AssignmentService service;
-
-    @Mock
     private HttpServletRequest request;
 
     @Mock
     private HttpSession session;
 
-    @InjectMocks
+    private FakeAssignmentService service;
     private AssignmentController controller;
 
     private Assignment testAssignment;
 
     @BeforeEach
     void setUp() {
-        testAssignment = new Assignment();
+        service = new FakeAssignmentService();
+        controller = new AssignmentController(service);
+        testAssignment = new Assignment(Subject.ENGLISH, LocalDate.now().plusDays(7), "notes");
     }
 
     // -- GET -- //
@@ -52,7 +51,7 @@ class AssignmentControllerTest {
 
         try (MockedStatic<HttpSessionUtils> httpStuff = mockStatic(HttpSessionUtils.class)) {
             httpStuff.when(() -> HttpSessionUtils.getValidSession(request)).thenReturn(session);
-            when(service.getAssignments(session)).thenReturn(List.of(testAssignment));
+            service.assignments = List.of(testAssignment);
 
             ResponseEntity<List<Assignment>> response = controller.getMyAssignments(request);
 
@@ -74,7 +73,7 @@ class AssignmentControllerTest {
 
         try (MockedStatic<HttpSessionUtils> httpStuff = mockStatic(HttpSessionUtils.class)) {
             httpStuff.when(() -> HttpSessionUtils.getValidSession(request)).thenReturn(session);
-            when(service.createAssignment(session, createRequest)).thenReturn(testAssignment);
+            service.createdAssignment = testAssignment;
 
             ResponseEntity<Assignment> response = controller.createAssignment(request, createRequest);
 
@@ -96,7 +95,7 @@ class AssignmentControllerTest {
 
         try (MockedStatic<HttpSessionUtils> httpStuff = mockStatic(HttpSessionUtils.class)) {
             httpStuff.when(() -> HttpSessionUtils.getValidSession(request)).thenReturn(session);
-            when(service.updateAssignment(session, updateRequest, 1)).thenReturn(testAssignment);
+            service.updatedAssignment = testAssignment;
 
             ResponseEntity<Assignment> response = controller.update(request, 1, updateRequest);
 
@@ -114,9 +113,43 @@ class AssignmentControllerTest {
 
             ResponseEntity<Void> response = controller.deleteAssignment(request, 1);
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         }
 
+    }
+
+    private static final class FakeAssignmentService extends AssignmentService {
+        private List<Assignment> assignments = List.of();
+        private Assignment createdAssignment;
+        private Assignment updatedAssignment;
+
+        private FakeAssignmentService() {
+            super(null, null);
+        }
+
+        @Override
+        public List<Assignment> getAssignments(HttpSession session) {
+            return assignments;
+        }
+
+        @Override
+        public Assignment createAssignment(HttpSession session, CreateAssignmentRequest createAssignmentRequest) {
+            return createdAssignment;
+        }
+
+        @Override
+        public Assignment updateAssignment(
+                HttpSession session,
+                UpdateAssignmentRequest request,
+                int assignmentId
+        ) throws UnauthorizedAccessException {
+            return updatedAssignment;
+        }
+
+        @Override
+        public void deleteAssignment(HttpSession session, int assignmentId) {
+            // no-op
+        }
     }
 
 }

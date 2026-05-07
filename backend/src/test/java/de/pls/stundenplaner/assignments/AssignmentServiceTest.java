@@ -6,6 +6,7 @@ import de.pls.stundenplaner.dto.request.assignment.CreateAssignmentRequest;
 import de.pls.stundenplaner.dto.request.assignment.UpdateAssignmentRequest;
 import de.pls.stundenplaner.subjects.Subject;
 import de.pls.stundenplaner.util.HttpSessionUtils;
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import de.pls.stundenplaner.util.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
@@ -45,10 +46,10 @@ class AssignmentServiceTest {
     private User mockUser;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws EmptyUsernameException {
         mockSession = mock(HttpSession.class);
-        userUUID = UUID.randomUUID();
-        mockUser = mock(User.class);
+        mockUser = new User("assignment-user", "hash");
+        userUUID = mockUser.getUserUUID();
     }
 
     // -- Get Assignments -- //
@@ -56,8 +57,7 @@ class AssignmentServiceTest {
     @Test
     void getAssignments_validSession_returnsList() throws InvalidSessionException {
 
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-        List<Assignment> expected = List.of(mock(Assignment.class));
+        List<Assignment> expected = List.of(new Assignment(Subject.ART, LocalDate.now().plusDays(1), "notes"));
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
 
@@ -90,9 +90,8 @@ class AssignmentServiceTest {
     @Test
     void createAssignment_validRequest_createsAndReturns() throws InvalidSessionException {
 
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
         LocalDate futureDate = LocalDate.now().plusDays(7);
-        Subject subject = mock(Subject.class);
+        Subject subject = Subject.ART;
         CreateAssignmentRequest request = new CreateAssignmentRequest(subject, futureDate, "Some notes");
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
@@ -112,7 +111,7 @@ class AssignmentServiceTest {
     void createAssignment_pastDueDate_throwsIllegalArgument() {
 
         LocalDate pastDate = LocalDate.now().minusDays(1);
-        CreateAssignmentRequest request = new CreateAssignmentRequest(mock(Subject.class), pastDate, "notes");
+        CreateAssignmentRequest request = new CreateAssignmentRequest(Subject.ART, pastDate, "notes");
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
 
@@ -130,13 +129,12 @@ class AssignmentServiceTest {
     @Test
     void updateAssignment_validRequest_updatesAndReturns() throws Exception {
 
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
         final int assignmentId = 1;
-        final Assignment assignment = mock(Assignment.class);
-        when(assignment.getUserUUID()).thenReturn(userUUID);
+        final Assignment assignment = new Assignment(Subject.ART, LocalDate.now().plusDays(2), "existing");
+        assignment.setUserUUID(userUUID);
 
         UpdateAssignmentRequest request = new UpdateAssignmentRequest(
-                mock(Subject.class), true, LocalDate.now().plusDays(3)
+                Subject.ART, true, LocalDate.now().plusDays(3)
         );
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
@@ -149,11 +147,11 @@ class AssignmentServiceTest {
 
             final Assignment result = assignmentService.updateAssignment(mockSession, request, assignmentId);
 
-            verify(assignment).setSubject(request.subject());
-            verify(assignment).setDueDate(request.dueDate());
-            verify(assignment).setCompleted(request.isCompleted());
             verify(assignmentRepository).save(assignment);
             assertThat(result).isEqualTo(assignment);
+            assertThat(result.getSubject()).isEqualTo(request.subject());
+            assertThat(result.getDueDate()).isEqualTo(request.dueDate());
+            assertThat(result.isCompleted()).isEqualTo(request.isCompleted());
         }
     }
 
@@ -162,7 +160,7 @@ class AssignmentServiceTest {
 
         final int assignmentId = 99;
         final UpdateAssignmentRequest request = new UpdateAssignmentRequest(
-                mock(Subject.class), true, LocalDate.now().plusDays(3)
+                Subject.ART, true, LocalDate.now().plusDays(3)
         );
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
@@ -181,13 +179,12 @@ class AssignmentServiceTest {
     @Test
     void updateAssignment_userMismatch_throwsUnauthorized() {
 
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
         final int assignmentId = 1;
-        final Assignment assignment = mock(Assignment.class);
-        when(assignment.getUserUUID()).thenReturn(UUID.randomUUID()); // different UUID
+        final Assignment assignment = new Assignment(Subject.ART, LocalDate.now().plusDays(2), "existing");
+        assignment.setUserUUID(UUID.randomUUID()); // different UUID
 
         final UpdateAssignmentRequest request = new UpdateAssignmentRequest(
-                mock(Subject.class), true, LocalDate.now().plusDays(3)
+                Subject.ART, true, LocalDate.now().plusDays(3)
         );
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
@@ -208,10 +205,8 @@ class AssignmentServiceTest {
     @Test
     void deleteAssignment_validRequest_deletesSuccessfully() throws InvalidSessionException, UnauthorizedAccessException {
         final int assignmentId = 1;
-        final Assignment assignment = mock(Assignment.class);
-
-        when(mockUser.getUserUUID()).thenReturn(userUUID);
-        when(assignment.getUserUUID()).thenReturn(userUUID);
+        final Assignment assignment = new Assignment(Subject.ART, LocalDate.now().plusDays(2), "existing");
+        assignment.setUserUUID(userUUID);
 
         try (MockedStatic<HttpSessionUtils> util = mockStatic(HttpSessionUtils.class)) {
 

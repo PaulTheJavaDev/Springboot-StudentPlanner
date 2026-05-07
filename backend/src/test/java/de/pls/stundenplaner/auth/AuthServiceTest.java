@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.security.NoSuchAlgorithmException;
@@ -33,8 +34,8 @@ class AuthServiceTest {
     private User mockUser;
 
     @BeforeEach
-    void setUp() {
-        mockUser = mock(User.class);
+    void setUp() throws EmptyUsernameException {
+        mockUser = new User("testuser", "stored-hash");
     }
 
     // -- Check Login -- //
@@ -42,17 +43,19 @@ class AuthServiceTest {
     @Test
     void checkLogin_validCredentials_savesNewSessionID() throws InvalidLoginException {
         LoginRequest request = new LoginRequest("testuser", "password123");
-        String hashedPassword = "hashed_password";
+        String hashedPassword = "$2a$10$abcdefghijklmnopqrstuv";
 
         try (MockedStatic<PasswordHasher> hasher = mockStatic(PasswordHasher.class)) {
-            hasher.when(() -> PasswordHasher.sha256("password123")).thenReturn(hashedPassword);
-            when(mockUser.getPassword_hash()).thenReturn(hashedPassword);
+            hasher.when(() -> PasswordHasher.isLegacySha256Hash(hashedPassword)).thenReturn(false);
+            hasher.when(() -> PasswordHasher.matchesPassword("password123", hashedPassword)).thenReturn(true);
+            mockUser.setPassword_hash(hashedPassword);
             when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
 
             authService.checkLogin(request);
 
-            verify(mockUser).setSessionID(any());
-            verify(userRepository).save(mockUser);
+            ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(userCaptor.capture());
+            assertThat(userCaptor.getValue().getSessionID()).isNotNull();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
@@ -72,10 +75,12 @@ class AuthServiceTest {
     @Test
     void checkLogin_wrongPassword_throwsInvalidLogin() {
         LoginRequest request = new LoginRequest("testuser", "wrongpassword");
+        String hashedPassword = "$2a$10$abcdefghijklmnopqrstuv";
 
         try (MockedStatic<PasswordHasher> hasher = mockStatic(PasswordHasher.class)) {
-            hasher.when(() -> PasswordHasher.sha256("wrongpassword")).thenReturn("wrong_hash");
-            when(mockUser.getPassword_hash()).thenReturn("correct_hash");
+            hasher.when(() -> PasswordHasher.isLegacySha256Hash(hashedPassword)).thenReturn(false);
+            hasher.when(() -> PasswordHasher.matchesPassword("wrongpassword", hashedPassword)).thenReturn(false);
+            mockUser.setPassword_hash(hashedPassword);
             when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
 
             assertThatThrownBy(() -> authService.checkLogin(request))
@@ -86,12 +91,12 @@ class AuthServiceTest {
     // -- Register User -- //
 
     @Test
-    void registerUser_validRequest_savesUser() throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
+    void registerUser_validRequest_savesUser() throws UserAlreadyExistsException, EmptyUsernameException {
         RegisterRequest request = new RegisterRequest("newuser", "password123");
         String hashedPassword = "hashed_password";
 
         try (MockedStatic<PasswordHasher> hasher = mockStatic(PasswordHasher.class)) {
-            hasher.when(() -> PasswordHasher.sha256("password123")).thenReturn(hashedPassword);
+            hasher.when(() -> PasswordHasher.hashPassword("password123")).thenReturn(hashedPassword);
             when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
 
             authService.registerUser(request);
@@ -104,7 +109,7 @@ class AuthServiceTest {
     void registerUser_usernameAlreadyExists_throwsUserAlreadyExists() {
         RegisterRequest request = new RegisterRequest("existinguser", "password123");
 
-        when(userRepository.findByUsername("existinguser")).thenReturn(Optional.of(mockUser));
+        when(userRepository.findByUsername("existinguser")).thenReturn(Optional.of(new User()));
 
         assertThatThrownBy(() -> authService.registerUser(request))
                 .isInstanceOf(UserAlreadyExistsException.class);
@@ -117,7 +122,7 @@ class AuthServiceTest {
         String hashedPassword = "hashed_password";
 
         try (MockedStatic<PasswordHasher> hasher = mockStatic(PasswordHasher.class)) {
-            hasher.when(() -> PasswordHasher.sha256("password123")).thenReturn(hashedPassword);
+            hasher.when(() -> PasswordHasher.hashPassword("password123")).thenReturn(hashedPassword);
             when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
 
             assertThrows(EmptyUsernameException.class, () -> authService.registerUser(request));

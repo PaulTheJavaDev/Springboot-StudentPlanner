@@ -57,7 +57,7 @@ public class AuthController {
             return new ResponseEntity<>(registerResponse, HttpStatus.OK);
         } catch (UserAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        } catch (EmptyUsernameException | NoSuchAlgorithmException e) {
+        } catch (EmptyUsernameException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }

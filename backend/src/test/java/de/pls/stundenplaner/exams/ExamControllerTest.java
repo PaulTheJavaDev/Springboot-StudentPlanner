@@ -12,13 +12,9 @@ import de.pls.stundenplaner.dto.response.exam.GetAllExamsResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,18 +36,12 @@ import jakarta.servlet.http.HttpSession;
 class ExamControllerTest {
 
     @Mock
-    private ExamService examService;
-
-    @Mock
     private HttpServletRequest request;
 
     @Mock
     private HttpSession session;
 
-    @Mock
-    private Subject subject;
-
-    @InjectMocks
+    private FakeExamService examService;
     private ExamController examController;
 
     private Exam exam;
@@ -59,8 +49,10 @@ class ExamControllerTest {
 
     @BeforeEach
     void setUp() {
+        examService = new FakeExamService();
+        examController = new ExamController(examService);
         exam = new Exam(Subject.ENGLISH, "Hello World", LocalDate.now().plusYears(2));
-        updateRequest = new UpdateExamRequest(subject, "Some notes", LocalDate.of(2025, 6, 15));
+        updateRequest = new UpdateExamRequest(Subject.ENGLISH, "Some notes", LocalDate.of(2025, 6, 15));
     }
 
     @Test
@@ -73,7 +65,7 @@ class ExamControllerTest {
                     .toList();
 
             mock.when(() -> getValidSession(request)).thenReturn(session);
-            when(examService.getAllExams(session)).thenReturn(new GetAllExamsResponse(exams));
+            examService.getAllExamsResponse = new GetAllExamsResponse(exams);
 
             final ResponseEntity<GetAllExamsResponse> response = examController.getExams(request);
 
@@ -102,7 +94,7 @@ void createExam_returnsCreatedExam() throws InvalidSessionException {
         );
 
         mock.when(() -> getValidSession(request)).thenReturn(session);
-        when(examService.createExam(session, createRequest)).thenReturn(createExamResponse);
+        examService.createExamResponse = createExamResponse;
 
         final ResponseEntity<CreateExamResponse> response = examController.createExam(request, createRequest);
 
@@ -116,7 +108,7 @@ void updateExam_returnsUpdatedExam() throws InvalidSessionException, Unauthorize
     try (MockedStatic<HttpSessionUtils> mock = mockStatic(HttpSessionUtils.class)) {
 
         mock.when(() -> getValidSession(request)).thenReturn(session);
-        when(examService.updateExam(session, updateRequest, 1)).thenReturn(exam);
+        examService.updatedExam = exam;
 
         final ResponseEntity<Exam> response = examController.updateExam(request, 1, updateRequest);
 
@@ -132,8 +124,7 @@ void updateExam_throwsUnauthorizedAccessException() throws InvalidSessionExcepti
     try (MockedStatic<HttpSessionUtils> mock =
                  mockStatic(HttpSessionUtils.class)) {
         mock.when(() -> getValidSession(request)).thenReturn(session);
-        when(examService.updateExam(session, updateRequest, 1))
-                .thenThrow(new UnauthorizedAccessException("User is not authorized to update this exam."));
+        examService.updateExamException = new UnauthorizedAccessException("User is not authorized to update this exam.");
 
         assertThatThrownBy(() -> examController.updateExam(request, 1, updateRequest))
                 .isInstanceOf(UnauthorizedAccessException.class);
@@ -149,7 +140,7 @@ void deleteExam_deletesSuccessfully() throws InvalidSessionException {
         final ResponseEntity<Void> response = examController.deleteExam(request, 1);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(examService).deleteExam(session, 1);
+        assertThat(examService.lastDeletedExamId).isEqualTo(1);
     }
 }
 
@@ -159,12 +150,55 @@ void deleteExam_throwsEntityNotFoundException() throws InvalidSessionException {
     try (MockedStatic<HttpSessionUtils> mock = mockStatic(HttpSessionUtils.class)) {
 
         mock.when(() -> getValidSession(request)).thenReturn(session);
-        doThrow(new EntityNotFoundException("Exam with ID 99 was not found.")).when(examService).deleteExam(session, 99);
+        examService.deleteExamException = new EntityNotFoundException("Exam with ID 99 was not found.");
 
         assertThatThrownBy(() -> examController.deleteExam(request, 99))
                 .isInstanceOf(EntityNotFoundException.class);
 
     }
 }
+
+    private static final class FakeExamService extends ExamService {
+        private GetAllExamsResponse getAllExamsResponse = new GetAllExamsResponse(List.of());
+        private CreateExamResponse createExamResponse;
+        private Exam updatedExam;
+        private Exception updateExamException;
+        private Exception deleteExamException;
+        private Integer lastDeletedExamId;
+
+        private FakeExamService() {
+            super(null, null);
+        }
+
+        @Override
+        public GetAllExamsResponse getAllExams(jakarta.servlet.http.HttpSession session) {
+            return getAllExamsResponse;
+        }
+
+        @Override
+        public CreateExamResponse createExam(jakarta.servlet.http.HttpSession session, CreateExamRequest createExamRequest) {
+            return createExamResponse;
+        }
+
+        @Override
+        public Exam updateExam(
+                jakarta.servlet.http.HttpSession session,
+                UpdateExamRequest request,
+                int examId
+        ) throws UnauthorizedAccessException {
+            if (updateExamException instanceof UnauthorizedAccessException unauthorizedAccessException) {
+                throw unauthorizedAccessException;
+            }
+            return updatedExam;
+        }
+
+        @Override
+        public void deleteExam(jakarta.servlet.http.HttpSession session, int examId) {
+            if (deleteExamException instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            lastDeletedExamId = examId;
+        }
+    }
 }
 

@@ -1,5 +1,6 @@
 package de.pls.stundenplaner.auth;
 
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
@@ -43,9 +44,22 @@ public class AuthService {
         final User user = userRepository.findByUsername(loginRequest.username())
                 .orElseThrow(InvalidLoginException::new);
 
-        final String hashedInputPassword = PasswordHasher.sha256(loginRequest.password());
+        final String storedHash = user.getPassword_hash();
+        final boolean isValidPassword;
 
-        if (!hashedInputPassword.equals(user.getPassword_hash())) {
+        if (PasswordHasher.isLegacySha256Hash(storedHash)) {
+            final String legacyInputHash = PasswordHasher.legacySha256(loginRequest.password());
+            isValidPassword = legacyInputHash.equals(storedHash);
+
+            // Automatic one-time migration of legacy SHA-256 hashes to BCrypt.
+            if (isValidPassword) {
+                user.setPassword_hash(PasswordHasher.hashPassword(loginRequest.password()));
+            }
+        } else {
+            isValidPassword = PasswordHasher.matchesPassword(loginRequest.password(), storedHash);
+        }
+
+        if (!isValidPassword) {
             throw new InvalidLoginException();
         }
 
@@ -66,7 +80,7 @@ public class AuthService {
     @Transactional
     public RegisterResponse registerUser(
             final @NotNull @NonNull RegisterRequest registerRequest
-    ) throws UserAlreadyExistsException, EmptyUsernameException, NoSuchAlgorithmException {
+    ) throws UserAlreadyExistsException, EmptyUsernameException {
 
         final String username = registerRequest.username();
 
@@ -74,7 +88,7 @@ public class AuthService {
             throw new UserAlreadyExistsException(username);
         }
 
-        final String hashedPassword = PasswordHasher.sha256(registerRequest.password());
+        final String hashedPassword = PasswordHasher.hashPassword(registerRequest.password());
 
         if (username.isEmpty()) {
             throw new EmptyUsernameException();

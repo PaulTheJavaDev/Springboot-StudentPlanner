@@ -2,6 +2,7 @@ package de.pls.stundenplaner.util;
 
 import de.pls.stundenplaner.auth.User;
 import de.pls.stundenplaner.auth.UserRepository;
+import de.pls.stundenplaner.util.exceptions.EmptyUsernameException;
 import de.pls.stundenplaner.util.exceptions.InvalidSessionException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -28,8 +29,11 @@ class HttpSessionUtilsTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
     private User user;
+
+    HttpSessionUtilsTest() throws EmptyUsernameException {
+        user = new User("test-user", "test-hash");
+    }
 
     @Test
     void getValidSession_returnsSession_whenAuthenticated() throws InvalidSessionException {
